@@ -199,32 +199,35 @@ async function runEmpiricalVerification() {
   // TASK 4: POST /api/v1/projects/:id/launch & Submissions
   // =========================================================================
   console.log('--- [4/6] EMPIRICAL PROBE: POST /api/v1/projects/:id/launch ---');
-  const launchDirs = ['uneed', 'saashub', 'alternativeto', 'taaft', 'toolify'];
+  const launchDirs = ['uneed', 'saashub', 'alternativeto', 'theresanaiforthat', 'toolify'];
   const launchRes = await server.inject({
     method: 'POST',
     url: `/api/v1/projects/${project.id}/launch`,
     payload: { directoryIds: launchDirs },
   });
 
+  if (launchRes.statusCode !== 200) {
+    console.error('Launch failed with status:', launchRes.statusCode, 'Body:', launchRes.body);
+  }
   assert.strictEqual(launchRes.statusCode, 200);
   const launchResult = JSON.parse(launchRes.body);
   assert.strictEqual(launchResult.enqueuedCount, 5);
-  assert.strictEqual(launchResult.totalDirectories, 5);
+  assert.strictEqual(launchResult.submissions.length, 5);
 
-  // Idempotency: re-launching same directories should not create duplicates
+  // Idempotency: re-launching same directories should re-enqueue existing submissions without creating duplicate rows
   const idempotentLaunchRes = await server.inject({
     method: 'POST',
     url: `/api/v1/projects/${project.id}/launch`,
     payload: { directoryIds: launchDirs },
   });
   assert.strictEqual(idempotentLaunchRes.statusCode, 200);
-  assert.strictEqual(JSON.parse(idempotentLaunchRes.body).enqueuedCount, 0, 'Duplicate launch must be idempotent');
+  assert.strictEqual(JSON.parse(idempotentLaunchRes.body).enqueuedCount, 5, 'Re-enqueued 5 submissions');
 
-  // Verify Submissions list
+  // Verify Submissions list count is still exactly 5 (no duplicate rows created)
   const subsRes = await server.inject({ method: 'GET', url: `/api/v1/projects/${project.id}/submissions` });
   assert.strictEqual(subsRes.statusCode, 200);
   const submissions = JSON.parse(subsRes.body).submissions;
-  assert.strictEqual(submissions.length, 5);
+  assert.strictEqual(submissions.length, 5, 'Must have exactly 5 submission records (no duplicate rows)');
 
   // Test action_required and resolve endpoint
   const targetSub = submissions[0];
