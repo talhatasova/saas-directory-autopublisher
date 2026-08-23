@@ -1,7 +1,12 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-export const FIXTURES_DIR = path.resolve(__dirname);
+const currentDir = typeof __dirname !== 'undefined'
+  ? __dirname
+  : path.dirname(fileURLToPath(import.meta.url));
+
+export const FIXTURES_DIR = path.resolve(currentDir);
 
 export type FixtureName =
   | 'clean-saas-complete.html'

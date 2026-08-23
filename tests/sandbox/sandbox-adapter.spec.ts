@@ -1,5 +1,5 @@
-import { MockDirectoryServer } from './mock-directory-server';
-import { getSampleProjectData } from '../fixtures/fixtures';
+import { MockDirectoryServer } from './mock-directory-server.ts';
+import { getSampleProjectData } from '../fixtures/fixtures.ts';
 
 describe('Tier 2: Directory Submitter Adapter Sandbox & Mock Server', () => {
   let server: MockDirectoryServer;

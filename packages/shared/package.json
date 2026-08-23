@@ -14,7 +14,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "node -e \"const fs=require('fs'); if(fs.existsSync('dist')) fs.rmSync('dist', {recursive:true,force:true});\"",
-    "test": "node --test dist/**/*.test.js || echo 'No compiled tests found'"
+    "test": "node --test \"dist/__tests__/**/*.test.js\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",

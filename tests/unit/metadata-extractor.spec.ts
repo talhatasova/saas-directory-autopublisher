@@ -1,4 +1,4 @@
-import { loadFixture } from '../fixtures/fixtures';
+import { loadFixture } from '../fixtures/fixtures.ts';
 
 export interface ExtractedHtmlMetadata {
   title: string;

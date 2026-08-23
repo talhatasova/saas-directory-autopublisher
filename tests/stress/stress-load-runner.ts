@@ -235,7 +235,13 @@ export async function runConcurrencyBenchmark(options: ConcurrencyBenchmarkOptio
 }
 
 // Standalone CLI execution
-if (require.main === module) {
+const isMainModule = typeof process !== 'undefined' && process.argv[1] && (
+  process.argv[1].endsWith('stress-load-runner.ts') ||
+  process.argv[1].endsWith('stress-load-runner.js') ||
+  process.argv[1].endsWith('stress-load-runner')
+);
+
+if (isMainModule) {
   runConcurrencyBenchmark({ silent: false, totalProjects: 10, directoriesPerProject: 5, workerConcurrency: 10 })
     .then((metrics) => {
       console.log('Stress Benchmark Results:', JSON.stringify(metrics, null, 2));

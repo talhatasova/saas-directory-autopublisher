@@ -1,8 +1,9 @@
 import * as http from 'node:http';
 import * as url from 'node:url';
+import { fileURLToPath } from 'node:url';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { MOCK_DIRECTORIES } from './directory-configs';
+import { MOCK_DIRECTORIES } from './directory-configs.ts';
 
 export interface MockServerOptions {
   port?: number;
@@ -132,7 +133,8 @@ export class MockDirectoryServer {
     // Static fixture server
     if (pathname.startsWith('/fixtures/')) {
       const filename = pathname.replace('/fixtures/', '');
-      const fixturePath = path.resolve(__dirname, '../fixtures', filename);
+      const currentDir = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      const fixturePath = path.resolve(currentDir, '../fixtures', filename);
       if (fs.existsSync(fixturePath)) {
         const ext = path.extname(fixturePath).toLowerCase();
         const contentTypes: Record<string, string> = {
@@ -540,7 +542,13 @@ export class MockDirectoryServer {
 }
 
 // Standalone execution support
-if (require.main === module) {
+const isMainModule = typeof process !== 'undefined' && process.argv[1] && (
+  process.argv[1].endsWith('mock-directory-server.ts') ||
+  process.argv[1].endsWith('mock-directory-server.js') ||
+  process.argv[1].endsWith('mock-directory-server')
+);
+
+if (isMainModule) {
   const port = parseInt(process.env.PORT || '4040', 10);
   const server = new MockDirectoryServer({ port, silent: false });
   server.start().then((url) => {

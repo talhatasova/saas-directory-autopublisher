@@ -1,4 +1,4 @@
-import { runConcurrencyBenchmark, StressQueueEngine, StressJobPayload } from './stress-load-runner';
+import { runConcurrencyBenchmark, StressQueueEngine, type StressJobPayload } from './stress-load-runner.ts';
 
 describe('Tier 3: Queue Concurrency & Backpressure Stress Harness', () => {
   test('Simulates 10 concurrent SaaS submissions across 50 directory jobs (10x5)', async () => {

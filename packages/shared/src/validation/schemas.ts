@@ -4,8 +4,11 @@ import { APP_LIMITS } from '../constants/config.constant.js';
 
 export const UrlSchema = z
   .string()
-  .url({ message: 'Must be a valid URL starting with http:// or https://' })
-  .max(500, { message: 'URL cannot exceed 500 characters' });
+  .max(500, { message: 'URL cannot exceed 500 characters' })
+  .url({ message: 'Must be a valid URL format' })
+  .refine((url) => /^https?:\/\//i.test(url), {
+    message: 'URL must start with http:// or https://',
+  });
 
 export const PricingModelSchema = z.enum(
   PRICING_MODELS as unknown as [string, ...string[]]
