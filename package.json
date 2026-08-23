@@ -1,0 +1,28 @@
+{
+  "name": "saas-directory-autopublisher",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack SaaS Directory Auto-Publisher platform",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present"
+  },
+  "keywords": [
+    "saas",
+    "directory-publisher",
+    "automation",
+    "supabase",
+    "angular",
+    "playwright"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
