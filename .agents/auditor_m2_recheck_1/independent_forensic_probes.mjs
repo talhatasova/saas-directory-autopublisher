@@ -234,19 +234,19 @@ let passedChecks = 0;
   assert.strictEqual(project.name, 'IntegrityTestApp');
 
   // Launch Batch Submissions
-  const batch = await submissionSvc.launchBatch(project.id, ['uneed', 'saashub', 'toolify'], 'user-test-123');
+  const batch = await submissionService.launchBatch(project.id, ['uneed', 'saashub', 'toolify'], 'user-test-123');
   assert.strictEqual(batch.enqueuedCount, 3);
   assert.strictEqual(batch.submissions.length, 3);
 
   // Update submission status
   const subId = batch.submissions[0].id;
-  const updated = await submissionSvc.updateSubmission(subId, {
+  const updated = await submissionService.updateSubmission(subId, {
     status: 'in_progress',
   });
   assert.strictEqual(updated?.status, 'in_progress');
 
   // Test action required & resolve
-  const resolved = await submissionSvc.resolveAction(subId, {
+  const resolved = await submissionService.resolveAction(subId, {
     submissionId: subId,
     resolutionType: 'captcha_solved',
     customPayload: { token: 'tok_abc' },
@@ -255,7 +255,7 @@ let passedChecks = 0;
   assert.strictEqual(resolved.status, 'resumed');
 
   // Test retry flow
-  const retried = await submissionSvc.retrySubmission(subId);
+  const retried = await submissionService.retrySubmission(subId);
   assert.strictEqual(retried?.status, 'queued');
   assert.strictEqual(retried?.retryCount, 1);
 
