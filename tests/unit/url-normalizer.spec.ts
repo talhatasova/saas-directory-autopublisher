@@ -25,27 +25,43 @@ export function normalizeTargetUrl(inputUrl: string): NormalizedUrlResult {
 
   let cleaned = inputUrl.trim();
 
-  // Prepend https:// if no protocol provided
-  if (!/^https?:\/\//i.test(cleaned)) {
-    // If it looks like localhost or an IP, allow http
-    if (/^(localhost|127\.0\.0\.1)(:\d+)?/i.test(cleaned)) {
-      cleaned = `http://${cleaned}`;
-    } else {
-      cleaned = `https://${cleaned}`;
-    }
-  }
-
-  try {
-    const parsed = new URL(cleaned);
-
-    // Require valid hostname with at least one dot (or localhost)
-    if (!parsed.hostname.includes('.') && parsed.hostname !== 'localhost') {
+  // If input starts with localhost or 127.0.0.1 without protocol, prepend http://
+  if (/^(localhost|127\.0\.0\.1)(:\d+)?/i.test(cleaned)) {
+    cleaned = `http://${cleaned}`;
+  } else if (!/^https?:\/\//i.test(cleaned)) {
+    // If input contains an explicit non-http protocol (e.g. mailto:, ftp://, javascript:, data:, file:), reject it
+    if (/^([a-zA-Z][a-zA-Z0-9+.-]*:\/\/|mailto:|javascript:|data:)/i.test(cleaned)) {
       return {
         isValid: false,
         normalizedUrl: '',
         hostname: '',
         protocol: '',
         domain: '',
+        error: 'Only http and https protocols are supported'
+      };
+    }
+    // Default to https:// for naked domains
+    cleaned = `https://${cleaned}`;
+  }
+
+  try {
+    const parsed = new URL(cleaned);
+
+    // Require valid hostname (not starting/ending with dot, must have a dot or be localhost)
+    if (
+      parsed.hostname.startsWith('.') ||
+      parsed.hostname.endsWith('.') ||
+      (!parsed.hostname.includes('.') && parsed.hostname !== 'localhost')
+    ) {
+      return {
+        isValid: false,
+        normalizedUrl: '',
+        hostname: '',
+        protocol: '',
+        domain: '',
+        error: 'Invalid hostname or missing TLD'
+      };
+    }
         error: 'Invalid hostname or missing TLD'
       };
     }

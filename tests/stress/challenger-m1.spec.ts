@@ -28,9 +28,8 @@ import {
   mapDirectoryRowToEntity,
   mapSubmissionRowToEntity,
 } from '../../packages/shared/dist/supabase/db-helper.js';
-import { normalizeTargetUrl } from '../unit/url-normalizer.spec.js';
-import { Database } from '../../packages/shared/dist/types/database.types.js';
-import { Project, Submission } from '../../packages/shared/dist/types/entities.types.js';
+import { normalizeTargetUrl } from '../unit/url-normalizer.spec.ts';
+import type { Database } from '../../packages/shared/src/types/database.types.ts';
 
 type UserRow = Database['public']['Tables']['users']['Row'];
 type ProjectRow = Database['public']['Tables']['projects']['Row'];
@@ -441,7 +440,7 @@ describe('CHALLENGER-M1: Empirical Verification & Stress Test Suite', () => {
       const durationMs = performance.now() - startTime;
 
       assert.strictEqual(totalProcessed, ITERATIONS);
-      // High-performance assertion: 100k transforms should take under 1000ms
+      // High-performance assertion: 100k transforms should take under 2000ms
       assert.ok(
         durationMs < 2000,
         `100,000 transformations took ${durationMs.toFixed(2)}ms (expected < 2000ms)`
