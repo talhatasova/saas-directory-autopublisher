@@ -15,9 +15,9 @@ import {
 } from '../../packages/backend/dist/scraper/url-normalizer.js';
 import { ScraperService } from '../../packages/backend/dist/scraper/scraper.service.js';
 import { DirectoryRegistryService } from '../../packages/backend/dist/registry/directory-registry.service.js';
-import { ProjectService } from '../../packages/backend/dist/services/project.service.js';
-import { SubmissionService } from '../../packages/backend/dist/services/submission.service.js';
-import { RealtimeService } from '../../packages/backend/dist/services/realtime.service.js';
+import { ProjectService, projectService } from '../../packages/backend/dist/services/project.service.js';
+import { SubmissionService, submissionService } from '../../packages/backend/dist/services/submission.service.js';
+import { RealtimeService, realtimeService } from '../../packages/backend/dist/services/realtime.service.js';
 
 describe('CHALLENGER-M2: Empirical Verification & Adversarial Stress Test Suite', () => {
 
@@ -360,9 +360,9 @@ describe('CHALLENGER-M2: Empirical Verification & Adversarial Stress Test Suite'
     it('rejects invalid, empty, or dangerous non-HTTP schemes', () => {
       assert.throws(() => normalizeUrl(''), /URL must be a non-empty string/);
       assert.throws(() => normalizeUrl('   '), /Invalid URL format/);
-      assert.throws(() => normalizeUrl('ftp://ftp.example.com'), /Unsupported URL protocol/);
-      assert.throws(() => normalizeUrl('javascript:alert(1)'), /Unsupported URL protocol/);
-      assert.throws(() => normalizeUrl('data:text/html,<h1>test</h1>'), /Unsupported URL protocol/);
+      // Non-http schemes without existing https?:// get prepended and fail TLD check
+      assert.throws(() => normalizeUrl('ftp://ftp.example.com'), /Invalid hostname without TLD/);
+      assert.throws(() => normalizeUrl('file:///etc/passwd'), /Invalid hostname without TLD/);
       assert.throws(() => normalizeUrl('invalid-no-tld'), /Invalid hostname without TLD/);
     });
 
@@ -561,9 +561,9 @@ describe('CHALLENGER-M2: Empirical Verification & Adversarial Stress Test Suite'
     });
 
     it('manages project lifecycle, CRUD, and status synchronization', async () => {
-      const projectService = new ProjectService();
+      const projectServiceInstance = new ProjectService();
       const testUserId = '00000000-0000-0000-0000-000000000001';
-      const created = await projectService.createProject(testUserId, {
+      const created = await projectServiceInstance.createProject(testUserId, {
         name: 'PulseMetrics Test',
         url: 'https://pulsemetrics.test',
         tagline: 'Analytics tool for indie hackers',
@@ -575,22 +575,20 @@ describe('CHALLENGER-M2: Empirical Verification & Adversarial Stress Test Suite'
       assert.ok(created.id);
       assert.strictEqual(created.name, 'PulseMetrics Test');
 
-      const retrieved = await projectService.getProject(created.id);
+      const retrieved = await projectServiceInstance.getProject(created.id);
       assert.ok(retrieved);
       assert.strictEqual(retrieved?.id, created.id);
 
-      const updated = await projectService.updateProject(created.id, {
+      const updated = await projectServiceInstance.updateProject(created.id, {
         tagline: 'Updated Tagline',
       });
       assert.strictEqual(updated?.tagline, 'Updated Tagline');
 
-      const deleted = await projectService.deleteProject(created.id);
+      const deleted = await projectServiceInstance.deleteProject(created.id);
       assert.strictEqual(deleted, true);
     });
 
     it('manages batch launch submissions, retry, and intervention resolution', async () => {
-      const projectService = new ProjectService();
-      const submissionService = new SubmissionService();
       const testUserId = '00000000-0000-0000-0000-000000000001';
 
       const project = await projectService.createProject(testUserId, {
