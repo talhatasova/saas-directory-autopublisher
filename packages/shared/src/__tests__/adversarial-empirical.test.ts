@@ -6,7 +6,6 @@ import {
   SubmissionStatusSchema,
   SubmissionTypeSchema,
   UserPlanSchema,
-  ExtractMetadataRequestSchema,
   CreateProjectRequestSchema,
   UpdateProjectRequestSchema,
   LaunchSubmissionsRequestSchema,
@@ -22,7 +21,6 @@ import {
 } from '../supabase/db-helper.js';
 import {
   DIRECTORY_CATALOG,
-  DIRECTORY_BY_ID,
 } from '../constants/directories.constant.js';
 import {
   ERROR_CODES,
@@ -30,9 +28,8 @@ import {
   SUBMISSION_STATUSES,
   SUBMISSION_TYPES,
   USER_PLANS,
-  DIRECTORY_STATUSES,
 } from '../constants/status.constant.js';
-import { APP_LIMITS, SUPABASE_DEFAULTS } from '../constants/config.constant.js';
+import { APP_LIMITS } from '../constants/config.constant.js';
 import { Database } from '../types/database.types.js';
 
 describe('Adversarial Stress Suite: packages/shared', () => {
