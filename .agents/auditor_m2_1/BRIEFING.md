@@ -1,4 +1,4 @@
-# BRIEFING — 2026-08-23T18:20:00Z
+# BRIEFING — 2026-08-23T18:22:30Z
 
 ## Mission
 Forensic integrity audit for Milestone 2: Backend API & Metadata Scraper / Enrichment Service.
@@ -19,26 +19,32 @@ Forensic integrity audit for Milestone 2: Backend API & Metadata Scraper / Enric
 
 ## Current Parent
 - Conversation ID: c0bfcb5e-0fde-411e-af00-2dcd3a6ea627
-- Updated: 2026-08-23T18:20:00Z
+- Updated: 2026-08-23T18:22:30Z
 
 ## Audit Scope
-- **Work product**: Milestone 2 codebase (`packages/backend`, `packages/shared`, `tests/unit/scraper.test.ts`, `tests/unit/api.test.ts`, etc.)
+- **Work product**: Milestone 2 codebase (`packages/backend`, `packages/shared`, `tests/unit`)
 - **Profile loaded**: General Project (development mode)
 - **Audit type**: forensic integrity check
 
 ## Audit Progress
-- **Phase**: investigating
-- **Checks completed**: []
-- **Checks remaining**: [Source Code Analysis, Facade Detection, Hardcoding Detection, Behavioral Execution, SSE/WS Verification, Test Verification]
-- **Findings so far**: Under Investigation
+- **Phase**: reporting
+- **Checks completed**: [Source Code Analysis, Facade Detection, Hardcoding Detection, Behavioral Execution, Build Verification, SSE/WS Verification, Test Verification]
+- **Checks remaining**: []
+- **Findings so far**: INTEGRITY VIOLATION / BUILD FAILURE (TypeScript compilation error TS2339 / TS7006 in `packages/backend/src/scraper/metadata-extractor.ts` causes `npm run build` to fail).
 
 ## Attack Surface
-- **Hypotheses tested**: [TBD]
-- **Vulnerabilities found**: [TBD]
-- **Untested angles**: [TBD]
+- **Hypotheses tested**: 
+  - Checked whether `npm run build` compiles cleanly from TypeScript source -> FAILED (TypeScript type-narrowing error in `metadata-extractor.ts` lines 130 and 185 causes `tsc` to fail).
+  - Checked whether backend tests were executing source or pre-built dist -> backend package.json tests target `dist/`, masking build failure when stale dist files exist.
+  - Checked for hardcoded domain strings/test fixture results in backend src -> PASS (no hardcoded test returns).
+  - Checked for facade implementations or hollow stubs -> PASS (genuine Cheerio, Fastify, Zod, and SSE/WS logic).
+- **Vulnerabilities found**: 
+  - `packages/backend/src/scraper/metadata-extractor.ts` fails `tsc` compilation with 4 errors (`never` type narrowing on `canonicalHref` and `metaKeywords`).
+- **Untested angles**: Full Playwright browser automation (Milestone 3/5 scope).
 
 ## Key Decisions Made
-- Initialized forensic audit workspace and confirmed development mode constraints.
+- Executed empirical build verification and Node.js test execution.
+- Recorded build failure as strict integrity failure per forensic protocol (a project that does not build from source fails behavioral verification).
 
 ## Artifact Index
 - `.agents/auditor_m2_1/DISPATCH.md` — Dispatch record

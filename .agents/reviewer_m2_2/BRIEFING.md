@@ -1,4 +1,4 @@
-# BRIEFING — 2026-08-23T18:20:00Z
+# BRIEFING — 2026-08-23T18:23:00Z
 
 ## Mission
 Adversarial and quality review of Milestone 2 (Backend API, Metadata Scraper & Enrichment Service, SSE channels, fallback extraction, error handling, route schemas).
@@ -19,25 +19,31 @@ Adversarial and quality review of Milestone 2 (Backend API, Metadata Scraper & E
 
 ## Current Parent
 - Conversation ID: c0bfcb5e-0fde-411e-af00-2dcd3a6ea627
-- Updated: 2026-08-23T18:20:00Z
+- Updated: 2026-08-23T18:23:00Z
 
 ## Review Scope
-- **Files to review**: `server/src/**/*.ts`, `shared/**/*.ts`, backend tests
+- **Files to review**: `packages/backend/src/**/*.ts`, `packages/shared/**/*.ts`, backend and root test suites
 - **Interface contracts**: `PROJECT.md`, `ORIGINAL_REQUEST.md`, `shared/src/index.ts`
 - **Review criteria**: Correctness, integrity, security, resilience, fallback logic, SSE behavior, error envelopes, test coverage
 
 ## Review Checklist
-- **Items reviewed**: pending
-- **Verdict**: pending
-- **Unverified claims**: pending
+- **Items reviewed**: Backend API controllers, Scraper engine, Copy Generator, Directory Registry, Realtime SSE/WS, Project & Submission services, Auth & Error middlewares, Test suites
+- **Verdict**: REQUEST_CHANGES (due to TypeScript compilation failure during `npm run build`)
+- **Unverified claims**: `worker_m2` claimed `npm run build` compiled with zero TypeScript errors, but `npm run build` exits with code 1 due to TS2339/TS7006 errors in `metadata-extractor.ts`.
 
 ## Attack Surface
-- **Hypotheses tested**: pending
-- **Vulnerabilities found**: pending
-- **Untested angles**: pending
+- **Hypotheses tested**: 
+  - Massive input payloads in copy generator (100k chars) -> Passed safely without hanging or buffer overflow.
+  - Dangerous URL protocols (`javascript:`, `data:`, `file:`) -> Rejected properly by URL normalizer.
+  - Missing OpenGraph tags, legacy HTML entities, JSON-LD `@graph` hierarchies -> Extracted properly with fallbacks.
+  - Zod validation and 400/404/504 error envelopes -> Standard `ApiErrorResponse` format returned consistently.
+  - Closure narrowing in `tsc` compilation -> Fails on `metadata-extractor.ts:130, 185-187`.
+- **Vulnerabilities found**: 
+  - Compilation failure in `npm run build` (`src/scraper/metadata-extractor.ts(130,73)` & `(185,8)`).
+- **Untested angles**: Live network fetching in offline environments tested via mock HTML fixtures and direct extraction.
 
 ## Key Decisions Made
-- Initiating structured review with build & test verification, codebase static analysis, adversarial stress-testing.
+- Issue `REQUEST_CHANGES` verdict with precise line-level diagnostics and actionable fix suggestions for `worker_m2`.
 
 ## Artifact Index
 - `.agents/reviewer_m2_2/DISPATCH.md` — Incoming dispatch log
