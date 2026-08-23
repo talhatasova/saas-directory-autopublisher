@@ -450,19 +450,26 @@ describe('CHALLENGER-M2-RECHECK: Fastify Endpoints, Batch Launch, SSE & WebSocke
           `${serverUrl}/api/v1/submissions/stream`,
           { headers: { Accept: 'text/event-stream' } },
           (res) => {
+            let buffer = '';
             res.on('data', (chunk) => {
-              const lines = chunk.toString().split('\n');
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  try {
-                    const parsed = JSON.parse(line.substring(6));
-                    if (parsed.type === 'STATUS_SYNC') {
-                      resolveReady();
-                    } else if (parsed.type === 'HIGH_SPEED_PROBE') {
-                      eventCounts[i]++;
+              buffer += chunk.toString();
+              let boundary: number;
+              while ((boundary = buffer.indexOf('\n\n')) !== -1) {
+                const rawEvent = buffer.substring(0, boundary);
+                buffer = buffer.substring(boundary + 2);
+                const lines = rawEvent.split('\n');
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    try {
+                      const parsed = JSON.parse(line.substring(6));
+                      if (parsed.type === 'STATUS_SYNC') {
+                        resolveReady();
+                      } else if (parsed.type === 'HIGH_SPEED_PROBE') {
+                        eventCounts[i]++;
+                      }
+                    } catch {
+                      // ignore parse error
                     }
-                  } catch {
-                    // ignore partial chunks
                   }
                 }
               }
@@ -473,36 +480,38 @@ describe('CHALLENGER-M2-RECHECK: Fastify Endpoints, Batch Launch, SSE & WebSocke
         sseConnections.push(req);
       }
 
-      // Wait for all clients to connect and receive initial sync
-      await Promise.all(readyPromises);
+      try {
+        // Wait for all clients to connect and receive initial sync
+        await Promise.all(readyPromises);
 
-      // Fire 1000 events rapidly
-      const startTime = performance.now();
-      for (let e = 0; e < totalEvents; e++) {
-        realtimeService.broadcast({
-          type: 'HIGH_SPEED_PROBE',
-          payload: { seq: e, timestamp: Date.now() },
-        });
+        // Fire 1000 events rapidly
+        const startTime = performance.now();
+        for (let e = 0; e < totalEvents; e++) {
+          realtimeService.broadcast({
+            type: 'HIGH_SPEED_PROBE',
+            payload: { seq: e, timestamp: Date.now() },
+          });
+        }
+
+        // Wait for delivery
+        await new Promise((r) => setTimeout(r, 400));
+        const duration = performance.now() - startTime;
+
+        // Verify every client received all 1000 events
+        for (let i = 0; i < clientCount; i++) {
+          assert.strictEqual(
+            eventCounts[i],
+            totalEvents,
+            `SSE Client ${i} received ${eventCounts[i]}/${totalEvents} events`
+          );
+        }
+      } finally {
+        // Clean up
+        for (const req of sseConnections) {
+          req.destroy();
+        }
+        await new Promise((r) => setTimeout(r, 50));
       }
-
-      // Wait for delivery
-      await new Promise((r) => setTimeout(r, 400));
-      const duration = performance.now() - startTime;
-
-      // Verify every client received all 1000 events
-      for (let i = 0; i < clientCount; i++) {
-        assert.strictEqual(
-          eventCounts[i],
-          totalEvents,
-          `SSE Client ${i} received ${eventCounts[i]}/${totalEvents} events`
-        );
-      }
-
-      // Clean up
-      for (const req of sseConnections) {
-        req.destroy();
-      }
-      await new Promise((r) => setTimeout(r, 50));
     });
 
     it('enforces project channel isolation on SSE: project-filtered clients only receive events for their project', async () => {
