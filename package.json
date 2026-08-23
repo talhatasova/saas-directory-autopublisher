@@ -6,9 +6,17 @@
   "workspaces": [
     "packages/*"
   ],
+  "type": "module",
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "node --experimental-strip-types --import ./tests/setup.ts --test tests/unit/*.spec.ts tests/sandbox/*.spec.ts tests/stress/*.spec.ts",
+    "test:unit": "node --experimental-strip-types --import ./tests/setup.ts --test tests/unit/*.spec.ts",
+    "test:sandbox": "node --experimental-strip-types --import ./tests/setup.ts --test tests/sandbox/*.spec.ts",
+    "test:stress": "node --experimental-strip-types --import ./tests/setup.ts --test tests/stress/*.spec.ts",
+    "test:stress:run": "node --experimental-strip-types tests/stress/stress-load-runner.ts",
+    "test:e2e": "npx playwright test --config=tests/e2e/playwright.config.ts",
+    "test:all": "npm run test && npm run test:stress:run",
+    "sandbox:server": "node --experimental-strip-types tests/sandbox/mock-directory-server.ts",
     "lint": "npm run lint --workspaces --if-present",
     "clean": "npm run clean --workspaces --if-present"
   },
