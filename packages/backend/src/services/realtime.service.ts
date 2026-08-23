@@ -53,7 +53,7 @@ export class RealtimeService extends EventEmitter {
     this.sseClients.delete(id);
   }
 
-  private sendSseEvent(reply: FastifyReply, data: Record<string, unknown>): void {
+  private sendSseEvent(reply: FastifyReply, data: unknown): void {
     try {
       reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
     } catch {
@@ -96,7 +96,7 @@ export class RealtimeService extends EventEmitter {
 
   // --- Broadcasting ---
 
-  public broadcast(event: RealtimeEventPayload, targetProjectId?: string): void {
+  public broadcast(event: RealtimeBroadcastEvent, targetProjectId?: string): void {
     const rawData = JSON.stringify(event);
 
     // 1. Broadcast to SSE clients

@@ -5,7 +5,6 @@ import {
   ResolveActionRequest,
   ResolveActionRequestSchema,
   Submission,
-  SubmissionStatus,
   SubmissionWithDirectory,
 } from '@saas-autopublisher/shared';
 import { directoryRegistry } from '../registry/directory-registry.service.js';
