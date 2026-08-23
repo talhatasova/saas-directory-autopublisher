@@ -1,4 +1,4 @@
-# BRIEFING — 2026-08-23T18:20:00Z
+# BRIEFING — 2026-08-23T18:25:00Z
 
 ## Mission
 Adversarially review Milestone 2 backend implementation (Fastify server, REST endpoints, WebSocket/SSE stream, Scraper, CopyGenerator, Directory Registry, Zod validation, SLA & constraints).
@@ -19,7 +19,7 @@ Adversarially review Milestone 2 backend implementation (Fastify server, REST en
 
 ## Current Parent
 - Conversation ID: c0bfcb5e-0fde-411e-af00-2dcd3a6ea627
-- Updated: 2026-08-23T18:20:00Z
+- Updated: 2026-08-23T18:25:00Z
 
 ## Review Scope
 - **Files to review**: `packages/backend/**/*`, `packages/shared/**/*`, tests, configuration
@@ -27,17 +27,24 @@ Adversarially review Milestone 2 backend implementation (Fastify server, REST en
 - **Review criteria**: Correctness, integrity, security, SLA performance, length constraints, streaming correctness, test coverage
 
 ## Review Checklist
-- **Items reviewed**: [TBD]
-- **Verdict**: pending
-- **Unverified claims**: [TBD]
+- **Items reviewed**: Fastify server (`server.ts`), Middlewares (`auth.middleware.ts`, `error-handler.ts`), Routes (`health`, `extract`, `directories`, `projects`, `submissions`), Scraper (`metadata-extractor.ts`, `url-normalizer.ts`, `copy-generator.ts`, `scraper.service.ts`), Registry (`directory-registry.service.ts`), Services (`project.service.ts`, `submission.service.ts`, `realtime.service.ts`), Test suites.
+- **Verdict**: REQUEST_CHANGES
+- **Unverified claims**: Worker M2 claimed `npm run build` completed with zero TypeScript errors. Independent verification showed `npm run build` failed with 4 TypeScript errors in `metadata-extractor.ts`.
 
 ## Attack Surface
-- **Hypotheses tested**: [TBD]
-- **Vulnerabilities found**: [TBD]
-- **Untested angles**: [TBD]
+- **Hypotheses tested**:
+  - `npm run build` clean compilation: FAILED (4 TS errors in `src/scraper/metadata-extractor.ts`).
+  - Copy generator length bounds on minimal inputs: FAILED (minimal input produces 448 characters < 500 characters).
+  - Sub-3s SLA timeout enforcement: PASSED (3000ms AbortController and fast Cheerio extraction).
+  - Zod validation and error formatting: PASSED (400 validation error with structured details).
+  - Realtime SSE and WebSocket stream handling: PASSED (Status change, logs, interventions, project isolation).
+- **Vulnerabilities found**:
+  1. `metadata-extractor.ts` TypeScript compilation errors breaking `npm run build`.
+  2. `copy-generator.ts` `synthesizeDetailedReview` generates < 500 characters on minimal/sparse input payloads.
+- **Untested angles**: Live Supabase DB connection (in-memory mode verified, live Supabase keys configured in `.env`).
 
 ## Key Decisions Made
-- Initiating structured review and adversarial challenge of Milestone 2 deliverables.
+- Issue `REQUEST_CHANGES` verdict with precise actionable findings and reproduction evidence.
 
 ## Artifact Index
 - `.agents/reviewer_m2_1/handoff.md` — Final review report and verdict
