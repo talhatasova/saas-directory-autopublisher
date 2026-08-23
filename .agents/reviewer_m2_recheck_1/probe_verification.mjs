@@ -67,17 +67,17 @@ if (pricing4 !== 'paid') throw new Error('Failed paid decimal price: ' + pricing
 console.log('? Probe 3: Decimal pricing classification (.00, 0.00, 29.99, 49.00) verified.');
 
 // 4. Null-safe JSON-LD
-const htmlWithNulls = '<script type=" application/ld+json\>[null, 123, \str\, false, { \@type\: \SoftwareApplication\, \name\: \ValidApp\ }]</script>';
+const htmlWithNulls = '<script type="application/ld+json">[null, 123, "str", false, { "@type": "SoftwareApplication", "name": "ValidApp" }]</script>';
 const meta = extractHtmlMetadata(htmlWithNulls, 'https://example.com');
 if (meta.jsonLd?.name !== 'ValidApp') {
- throw new Error('Failed null-safe JSON-LD parsing: ' + JSON.stringify(meta.jsonLd));
+  throw new Error('Failed null-safe JSON-LD parsing: ' + JSON.stringify(meta.jsonLd));
 }
 
-const htmlWithGraphNulls = '<script type=\application/ld+json\>{\@graph\: [null, null, { \@type\: \WebApplication\, \name\: \GraphApp\ }]}</script>';
+const htmlWithGraphNulls = '<script type="application/ld+json">{"@graph": [null, null, { "@type": "WebApplication", "name": "GraphApp" }]}</script>';
 const meta2 = extractHtmlMetadata(htmlWithGraphNulls, 'https://example.com');
 if (meta2.jsonLd?.name !== 'GraphApp') {
- throw new Error('Failed null-safe @graph JSON-LD parsing: ' + JSON.stringify(meta2.jsonLd));
+  throw new Error('Failed null-safe @graph JSON-LD parsing: ' + JSON.stringify(meta2.jsonLd));
 }
 
-console.log('? Probe 4: Null-safe JSON-LD parsing with heterogeneous arrays and nulls verified.');
+console.log('✔ Probe 4: Null-safe JSON-LD parsing with heterogeneous arrays and nulls verified.');
 console.log('--- ALL PROBES PASSED SUCCESSFULLY ---');

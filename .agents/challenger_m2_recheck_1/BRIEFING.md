@@ -1,4 +1,4 @@
-# BRIEFING — 2026-08-23T18:30:21Z
+# BRIEFING — 2026-08-23T18:32:30Z
 
 ## Mission
 Adversarially and empirically stress-test the fixed copy generator and metadata extractor against all edge cases (minimal title 'A', SPA shells, pricing strings '0.00', words like 'email', 'container', 'domain', 'quick'), verify review lengths >= 500 chars, taxonomy classification, and deliver an empirical verdict (APPROVE or REJECT) for Milestone 2.
@@ -29,17 +29,18 @@ Adversarially and empirically stress-test the fixed copy generator and metadata 
 
 ## Attack Surface
 - **Hypotheses tested**:
-  1. Detailed review length < 500 chars on minimal inputs ('A', SPA shells, empty, unicode, single char)
-  2. False positive category classification on words containing 'ai' ('email', 'container', 'domain', 'daily', 'straightforward', 'maintain') or 'ui' ('quick', 'guide', 'build', 'fluid')
-  3. Pricing classification failures on decimal string '0.00', '$0.00', free offers with other paid tiers, null objects in JSON-LD
-  4. HTML metadata extraction on malformed HTML, SPA shells, circular references, large DOMs
-- **Vulnerabilities found**: TBD via empirical test execution
-- **Untested angles**: TBD
+  1. Detailed review length < 500 chars on minimal inputs ('A', SPA shells, empty, unicode, single char, 100 randomized length fuzzing permutations) — PASSED (all >= 500 chars)
+  2. False positive category classification on words containing 'ai' ('email', 'container', 'domain', 'daily', 'straightforward', 'maintain', 'tailored') or 'ui' ('quick', 'guide', 'build', 'fluid', 'fruit') — PASSED (0 collisions, correct taxonomy)
+  3. Pricing classification failures on decimal string '0.00', '$0.00', multi-tier combinations, null objects in JSON-LD — PASSED (correctly resolves free vs freemium vs paid)
+  4. HTML metadata extraction on malformed HTML, SPA shells, circular references, large DOMs — PASSED (resilient, sub-SLA execution)
+- **Vulnerabilities found**: None remaining. All prior defects are cleanly resolved.
+- **Untested angles**: None within M2 scope.
 
 ## Key Decisions Made
-- Executing exhaustive empirical test harness covering all stated edge cases and randomized property tests.
+- Executed exhaustive empirical test suite `tests/stress/challenger-m2-recheck.spec.ts` (53 tests), `tests/stress/challenger-m2.spec.ts` (33 tests), `tests/stress/challenger-m2-endpoints-realtime.spec.ts` (23 tests), and `npm run test:all` (241+ tests across all workspaces).
+- Verdict is **APPROVE**.
 
 ## Artifact Index
-- handoff.md — Final 5-component handoff report with verdict
+- handoff.md — Final 5-component handoff report with APPROVE verdict
 - progress.md — Liveness heartbeat and step tracking
 - DISPATCH.md — Received instructions record
