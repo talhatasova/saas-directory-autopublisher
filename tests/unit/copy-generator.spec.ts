@@ -132,7 +132,8 @@ export class CopyGeneratorEngine {
     const commonTechTags = ['saas', 'ai', 'analytics', 'automation', 'productivity', 'devtools', 'marketing', 'stripe', 'finance', 'developer', 'no-code'];
 
     for (const tag of commonTechTags) {
-      if (textToScan.includes(tag)) {
+      const tagRegex = new RegExp(`\\b${tag.replace('-', '[-\\s]?')}\\b`, 'i');
+      if (tagRegex.test(textToScan)) {
         rawTokens.push(tag);
       }
     }

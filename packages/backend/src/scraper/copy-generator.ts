@@ -148,7 +148,8 @@ export class CopyGeneratorEngine {
     ];
 
     for (const tag of commonTechTags) {
-      if (textToScan.includes(tag)) {
+      const tagRegex = new RegExp(`\\b${tag.replace('-', '[-\\s]?')}\\b`, 'i');
+      if (tagRegex.test(textToScan)) {
         rawTokens.push(tag);
       }
     }
