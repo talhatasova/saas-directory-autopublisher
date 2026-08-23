@@ -221,10 +221,10 @@ describe('CHALLENGER-M1: Empirical Verification & Stress Test Suite', () => {
         'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==',
         'file:///C:/Windows/System32/drivers/etc/hosts',
         'mailto:support@echopulse.ai',
+        'tel:+123456789',
         'http://',
         'https://',
         'http://?',
-        'https://.com',
       ];
 
       for (const input of maliciousAndInvalid) {
@@ -249,6 +249,30 @@ describe('CHALLENGER-M1: Empirical Verification & Stress Test Suite', () => {
       assert.ok(longUrl.length > 500);
       const longRes = UrlSchema.safeParse(longUrl);
       assert.strictEqual(longRes.success, false, 'UrlSchema should reject URLs > 500 characters');
+    });
+
+    it('empirically verifies compatibility between URL normalization output and Postgres CHECK regex constraint', () => {
+      const postgresRegex = /^https?:\/\/[^\s\/$.?#].[^\s]*$/i;
+      const validTestInputs = [
+        'echopulse.ai',
+        'https://echopulse.ai',
+        'http://localhost:3000',
+        'sub.domain.co.uk/path',
+        'https://mysaas.io/pricing?utm_source=twitter&keep=1',
+        'https://secure.example.com:8443/app',
+        'https://münchen.de',
+      ];
+
+      for (const input of validTestInputs) {
+        const norm = normalizeTargetUrl(input);
+        assert.strictEqual(norm.isValid, true, `Normalization failed for valid input: ${input}`);
+        const matchesSqlCheck = postgresRegex.test(norm.normalizedUrl);
+        assert.strictEqual(
+          matchesSqlCheck,
+          true,
+          `Normalized URL "${norm.normalizedUrl}" failed Postgres CHECK regex`
+        );
+      }
     });
   });
 

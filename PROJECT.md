@@ -69,8 +69,8 @@ The SaaS Directory Auto-Publisher is an enterprise-grade full-stack platform des
 
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Database Architecture & Core Data Layer | Supabase Postgres schema DDL, RLS policies, Realtime config, TypeScript DB types, Supabase client | None | IN_PROGRESS |
-| M2 | Backend API & Metadata Scraper / Enrichment Service | REST/SSE API, Metadata scraper (Cheerio + JSON-LD), Copy generation engine, Directory Registry service, Seed data | M1 | PLANNED |
+| M1 | Database Architecture & Core Data Layer | Supabase Postgres schema DDL, RLS policies, Realtime config, TypeScript DB types, Supabase client | None | DONE |
+| M2 | Backend API & Metadata Scraper / Enrichment Service | REST/SSE API, Metadata scraper (Cheerio + JSON-LD), Copy generation engine, Directory Registry service, Seed data | M1 | IN_PROGRESS |
 | M3 | Queue Pipeline & 5+ Directory Submitter Adapters | BullMQ/In-Memory queue runner, DirectorySubmitter interface, 5 distinct adapters (Uneed, SaaSHub, AlternativeTo, Taaft, Toolify), CAPTCHA detection, Screenshot proof capture | M1, M2 | PLANNED |
 | M4 | Angular 19 Standalone Glassmorphic Frontend | Standalone components, Signals stores, Tailwind glassmorphic UI, Hero URL bar, Review modal, Directory selector, Live real-time matrix, Supabase Auth | M1, M2, M3 | PLANNED |
 | M5 | E2E Testing Suite & Adversarial Hardening | 4-Tier verification suite (Unit, Sandbox adapters, 10+ concurrency stress test, Playwright E2E), TEST_READY.md, Tier 5 Adversarial Hardening | M1, M2, M3, M4 | PLANNED |

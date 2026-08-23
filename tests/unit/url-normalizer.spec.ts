@@ -62,9 +62,6 @@ export function normalizeTargetUrl(inputUrl: string): NormalizedUrlResult {
         error: 'Invalid hostname or missing TLD'
       };
     }
-        error: 'Invalid hostname or missing TLD'
-      };
-    }
 
     // Strip tracking parameters
     const trackingParams = [
