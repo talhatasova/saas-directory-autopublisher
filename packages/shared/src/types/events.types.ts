@@ -1,4 +1,4 @@
-import { ActionRequiredPayload, SubmissionLogLevel, SubmissionStatus } from './entities.types.js';
+import { ActionRequiredPayload, SubmissionStatus } from './entities.types.js';
 
 export type JobEventType =
   | 'job:queued'

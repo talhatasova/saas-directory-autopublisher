@@ -1,4 +1,12 @@
-import {
+export type {
+  DirectoryStatus,
+  PricingModel,
+  SubmissionStatus,
+  SubmissionType,
+  UserPlan,
+} from './database.types.js';
+
+import type {
   DirectoryStatus,
   PricingModel,
   SubmissionStatus,

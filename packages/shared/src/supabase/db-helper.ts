@@ -111,11 +111,11 @@ export function mapSubmissionRowToEntity(row: SubmissionRow): Submission {
     jobId: row.job_id,
     listingUrl: row.listing_url,
     proofScreenshotUrl: row.proof_screenshot_url,
-    logs: (Array.isArray(row.logs) ? row.logs : []) as SubmissionLogLevel[],
+    logs: (Array.isArray(row.logs) ? (row.logs as unknown as SubmissionLogLevel[]) : []),
     errorMessage: row.error_message,
     errorCode: row.error_code,
     retryCount: row.retry_count,
-    actionRequiredPayload: (row.action_required_payload || null) as ActionRequiredPayload | null,
+    actionRequiredPayload: (row.action_required_payload || null) as unknown as ActionRequiredPayload | null,
     startedAt: row.started_at,
     completedAt: row.completed_at,
     createdAt: row.created_at,
@@ -180,8 +180,7 @@ export class SupabaseDbService {
     const row = mapProjectEntityToRow(projectData);
     const { data, error } = await this.client
       .from('projects')
-      // @ts-expect-error Supabase insert types requirement
-      .insert(row)
+      .insert(row as Database['public']['Tables']['projects']['Insert'])
       .select()
       .single();
 
@@ -201,8 +200,7 @@ export class SupabaseDbService {
     const row = mapProjectEntityToRow(updates);
     const { data, error } = await this.client
       .from('projects')
-      // @ts-expect-error Supabase update types requirement
-      .update(row)
+      .update(row as Database['public']['Tables']['projects']['Update'])
       .eq('id', projectId)
       .select()
       .single();

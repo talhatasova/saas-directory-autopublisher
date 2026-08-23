@@ -1,7 +1,6 @@
 import {
   Directory,
   PricingModel,
-  Project,
   ProjectMetadata,
   Submission,
   SubmissionStatus,
