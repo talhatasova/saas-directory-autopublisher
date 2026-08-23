@@ -6,14 +6,15 @@ export function errorHandler(error: FastifyError | ZodError | Error, _request: F
   const timestamp = new Date().toISOString();
 
   // Handle Zod Validation Errors
-  if (error instanceof ZodError) {
+  if (error instanceof ZodError || error.name === 'ZodError' || ('issues' in error && Array.isArray((error as any).issues))) {
+    const issues = (error as any).issues || [];
     const errorResponse: ApiErrorResponse = {
       error: {
         code: ERROR_CODES.VALIDATION_FAILED,
         message: 'Validation failed for request parameters',
-        details: error.issues.map((issue) => ({
-          field: issue.path.join('.'),
-          issue: issue.message,
+        details: issues.map((issue: any) => ({
+          field: Array.isArray(issue.path) ? issue.path.join('.') : issue.path,
+          issue: issue.message || 'Invalid value',
         })),
         timestamp,
       },
@@ -21,12 +22,16 @@ export function errorHandler(error: FastifyError | ZodError | Error, _request: F
     return reply.status(400).send(errorResponse);
   }
 
-  // Handle Fastify schema validation errors
-  if ('validation' in error && error.validation) {
+  // Handle URL validation or Bad Request errors
+  if (
+    error.message.includes('Invalid URL') ||
+    error.message.includes('validation failed') ||
+    error.message.includes('required')
+  ) {
     const errorResponse: ApiErrorResponse = {
       error: {
         code: ERROR_CODES.VALIDATION_FAILED,
-        message: error.message || 'Request validation failed',
+        message: error.message,
         timestamp,
       },
     };

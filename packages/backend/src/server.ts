@@ -13,7 +13,6 @@ import { submissionsRoutes } from './api/routes/submissions.routes.js';
 export async function buildServer(): Promise<FastifyInstance> {
   const fastify = Fastify({
     logger: false,
-    disableRequestLogging: true,
   });
 
   // Register CORS

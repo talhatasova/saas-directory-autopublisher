@@ -57,51 +57,80 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
     xml: false,
   });
 
-  // 1. Title Extraction
+  // Title Extraction
   const rawTitle = cleanText($('title').first().text());
-  const ogTitle = cleanText($('meta[property="og:title"]').attr('content') || $('meta[name="og:title"]').attr('content'));
-  const twitterTitle = cleanText($('meta[name="twitter:title"]').attr('content') || $('meta[property="twitter:title"]').attr('content'));
 
-  // 2. Headings
+  // Headings
   const h1 = cleanText($('h1').first().text()) || undefined;
   const h2 = cleanText($('h2').first().text()) || undefined;
 
-  // 3. Descriptions
-  const metaDesc = cleanText(
-    $('meta[name="description"]').attr('content') ||
-    $('meta[name="Description"]').attr('content') ||
-    $('meta[property="description"]').attr('content')
-  );
-  const ogDesc = cleanText($('meta[property="og:description"]').attr('content') || $('meta[name="og:description"]').attr('content'));
-  const twitterDesc = cleanText($('meta[name="twitter:description"]').attr('content') || $('meta[property="twitter:description"]').attr('content'));
+  let ogTitle: string | undefined = undefined;
+  let ogDesc: string | undefined = undefined;
+  let ogImage: string | undefined = undefined;
+  let ogUrl: string | undefined = undefined;
+  let twitterTitle: string | undefined = undefined;
+  let twitterDesc: string | undefined = undefined;
+  let twitterImage: string | undefined = undefined;
+  let metaDesc: string | undefined = undefined;
+  let metaKeywords: string | undefined = undefined;
 
-  // 4. Canonical & OG URL
-  const canonicalHref = $('link[rel="canonical"]').attr('href');
+  $('meta').each((_, el) => {
+    const attribs = el.attribs || {};
+    let prop = '';
+    let content = '';
+
+    for (const [k, v] of Object.entries(attribs)) {
+      const kLower = k.toLowerCase();
+      if (kLower === 'property' || kLower === 'name' || kLower === 'http-equiv') {
+        prop = (v || '').toLowerCase();
+      }
+      if (kLower === 'content') {
+        content = v || '';
+      }
+    }
+
+    if (prop && content) {
+      if (prop === 'og:title' && !ogTitle) ogTitle = cleanText(content);
+      if (prop === 'og:description' && !ogDesc) ogDesc = cleanText(content);
+      if ((prop === 'og:image' || prop === 'og:image:secure_url') && !ogImage) ogImage = cleanText(content);
+      if (prop === 'og:url' && !ogUrl) ogUrl = cleanText(content);
+      if (prop === 'twitter:title' && !twitterTitle) twitterTitle = cleanText(content);
+      if (prop === 'twitter:description' && !twitterDesc) twitterDesc = cleanText(content);
+      if ((prop === 'twitter:image' || prop === 'twitter:image:src') && !twitterImage) twitterImage = cleanText(content);
+      if (prop === 'description' && !metaDesc) metaDesc = cleanText(content);
+      if (prop === 'keywords' && !metaKeywords) metaKeywords = cleanText(content);
+    }
+  });
+
+  let faviconHref: string | undefined = undefined;
+  let appleTouchHref: string | undefined = undefined;
+  let canonicalHref: string | undefined = undefined;
+
+  $('link').each((_, el) => {
+    const attribs = el.attribs || {};
+    let rel = '';
+    let href = '';
+    for (const [k, v] of Object.entries(attribs)) {
+      const kLower = k.toLowerCase();
+      if (kLower === 'rel') rel = (v || '').toLowerCase();
+      if (kLower === 'href') href = v || '';
+    }
+
+    if (rel.includes('shortcut icon') || rel === 'icon') {
+      if (!faviconHref) faviconHref = href;
+    }
+    if (rel.includes('apple-touch-icon')) {
+      if (!appleTouchHref) appleTouchHref = href;
+    }
+    if (rel === 'canonical') {
+      if (!canonicalHref) canonicalHref = href;
+    }
+  });
+
   const canonicalUrl = canonicalHref ? resolveAbsoluteUrl(canonicalHref.trim(), baseUrl) : undefined;
-  const rawOgUrl = $('meta[property="og:url"]').attr('content') || $('meta[name="og:url"]').attr('content');
-  const ogUrl = resolveAbsoluteUrl(rawOgUrl, baseUrl);
-
-  // 5. Images & Icons
-  const rawOgImage = $('meta[property="og:image"]').attr('content') ||
-    $('meta[property="og:image:secure_url"]').attr('content') ||
-    $('meta[name="og:image"]').attr('content');
-  const ogImage = resolveAbsoluteUrl(rawOgImage, baseUrl);
-
-  const rawTwitterImage = $('meta[name="twitter:image"]').attr('content') ||
-    $('meta[name="twitter:image:src"]').attr('content') ||
-    $('meta[property="twitter:image"]').attr('content');
-  const twitterImage = resolveAbsoluteUrl(rawTwitterImage, baseUrl);
-
-  // Favicon candidates
-  let faviconHref =
-    $('link[rel="icon"]').attr('href') ||
-    $('link[rel="shortcut icon"]').attr('href') ||
-    $('link[rel="alternate icon"]').attr('href');
-
-  // Apple touch icon
-  const appleTouchHref =
-    $('link[rel="apple-touch-icon"]').attr('href') ||
-    $('link[rel="apple-touch-icon-precomposed"]').attr('href');
+  const resolvedOgUrl = resolveAbsoluteUrl(ogUrl, baseUrl);
+  const resolvedOgImage = resolveAbsoluteUrl(ogImage, baseUrl);
+  const resolvedTwitterImage = resolveAbsoluteUrl(twitterImage, baseUrl);
 
   let faviconUrl = resolveAbsoluteUrl(faviconHref, baseUrl);
   const appleTouchIconUrl = resolveAbsoluteUrl(appleTouchHref, baseUrl);
@@ -117,8 +146,8 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
 
   // Hero / Screenshots discovery
   const screenshotCandidates: string[] = [];
-  if (ogImage) screenshotCandidates.push(ogImage);
-  if (twitterImage && twitterImage !== ogImage) screenshotCandidates.push(twitterImage);
+  if (resolvedOgImage) screenshotCandidates.push(resolvedOgImage);
+  if (resolvedTwitterImage && resolvedTwitterImage !== resolvedOgImage) screenshotCandidates.push(resolvedTwitterImage);
 
   $('img').each((_, el) => {
     const src = $(el).attr('src') || $(el).attr('data-src');
@@ -147,26 +176,21 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
     }
   });
 
-  const heroImageUrl = ogImage || twitterImage || screenshotCandidates[0];
+  const heroImageUrl = resolvedOgImage || resolvedTwitterImage || screenshotCandidates[0];
 
-  // 6. Keywords
-  const rawMetaKeywords =
-    $('meta[name="keywords"]').attr('content') ||
-    $('meta[name="Keywords"]').attr('content') ||
-    $('meta[name="news_keywords"]').attr('content');
-
+  // Keywords
   let keywordsList: string[] | undefined = undefined;
-  if (rawMetaKeywords) {
-    keywordsList = rawMetaKeywords
+  if (metaKeywords) {
+    keywordsList = metaKeywords
       .split(',')
       .map((k) => cleanText(k))
       .filter((k) => k.length > 0);
   }
 
-  // 7. JSON-LD structured data
+  // JSON-LD structured data
   let jsonLd: Record<string, any> | undefined = undefined;
   $('script[type="application/ld+json"]').each((_, el) => {
-    if (jsonLd) return; // Pick first valid schema
+    if (jsonLd) return;
     try {
       const rawJson = $(el).html();
       if (!rawJson) return;
@@ -195,11 +219,11 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
         }
       }
     } catch {
-      // Ignore invalid JSON-LD blocks
+      // Ignore invalid JSON-LD
     }
   });
 
-  // 8. Body text summary for context
+  // Body text summary
   const bodyParagraphs: string[] = [];
   $('p, article, section').slice(0, 8).each((_, el) => {
     const text = cleanText($(el).text());
@@ -209,7 +233,6 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
   });
   const rawText = bodyParagraphs.join(' ');
 
-  // Determine primary title, tagline, description
   const chosenTitle =
     ogTitle ||
     twitterTitle ||
@@ -242,13 +265,13 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
     tagline: chosenTagline,
     description: chosenDescription,
     canonicalUrl,
-    ogTitle: ogTitle || undefined,
-    ogDescription: ogDesc || undefined,
-    ogImage,
-    ogUrl,
-    twitterTitle: twitterTitle || undefined,
-    twitterDescription: twitterDesc || undefined,
-    twitterImage,
+    ogTitle,
+    ogDescription: ogDesc,
+    ogImage: resolvedOgImage,
+    ogUrl: resolvedOgUrl,
+    twitterTitle,
+    twitterDescription: twitterDesc,
+    twitterImage: resolvedTwitterImage,
     faviconUrl,
     appleTouchIconUrl,
     heroImageUrl,

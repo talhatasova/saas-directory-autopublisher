@@ -177,22 +177,24 @@ export class CopyGeneratorEngine {
       return 'Developer Tools';
     }
     if (
-      combined.includes('analytic') ||
-      combined.includes('metric') ||
-      combined.includes('mrr') ||
-      combined.includes('revenue') ||
-      combined.includes('tracking')
-    ) {
-      return 'Analytics';
-    }
-    if (
       combined.includes('market') ||
       combined.includes('seo') ||
-      combined.includes('email') ||
+      combined.includes('outreach') ||
+      combined.includes('campaign') ||
       combined.includes('lead') ||
       combined.includes('growth')
     ) {
       return 'Marketing';
+    }
+    if (
+      combined.includes('analytic') ||
+      combined.includes('metric') ||
+      combined.includes('mrr') ||
+      combined.includes('revenue') ||
+      combined.includes('telemetry') ||
+      combined.includes('churn')
+    ) {
+      return 'Analytics';
     }
     if (
       combined.includes('finance') ||
@@ -227,10 +229,20 @@ export class CopyGeneratorEngine {
   public static classifyPricing(description: string, jsonLd?: Record<string, any>): PricingModel {
     if (jsonLd?.offers) {
       const offers = Array.isArray(jsonLd.offers) ? jsonLd.offers : [jsonLd.offers];
-      const hasFree = offers.some(
-        (o: any) => o.price === '0' || o.price === 0 || o.category?.toLowerCase() === 'freemium' || o.priceType?.toLowerCase() === 'free'
+      const isExplicitFreemium = offers.some(
+        (o: any) =>
+          o.category?.toLowerCase() === 'freemium' ||
+          o.name?.toLowerCase() === 'freemium' ||
+          o.title?.toLowerCase() === 'freemium'
       );
-      const hasPaid = offers.some((o: any) => Number(o.price) > 0 || (typeof o.price === 'string' && parseFloat(o.price) > 0));
+      if (isExplicitFreemium) return 'freemium';
+
+      const hasFree = offers.some(
+        (o: any) => o.price === '0' || o.price === 0 || o.priceType?.toLowerCase() === 'free'
+      );
+      const hasPaid = offers.some(
+        (o: any) => Number(o.price) > 0 || (typeof o.price === 'string' && parseFloat(o.price) > 0)
+      );
       if (hasFree && hasPaid) return 'freemium';
       if (hasFree && !hasPaid) return 'free';
       if (hasPaid) return 'paid';
