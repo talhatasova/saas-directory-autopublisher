@@ -64,28 +64,28 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
   const h1 = cleanText($('h1').first().text()) || undefined;
   const h2 = cleanText($('h2').first().text()) || undefined;
 
-  let ogTitle: string | undefined = undefined;
-  let ogDesc: string | undefined = undefined;
-  let ogImage: string | undefined = undefined;
-  let ogUrl: string | undefined = undefined;
-  let twitterTitle: string | undefined = undefined;
-  let twitterDesc: string | undefined = undefined;
-  let twitterImage: string | undefined = undefined;
-  let metaDesc: string | undefined = undefined;
-  let metaKeywords: string | undefined = undefined;
+  let ogTitle: string | undefined;
+  let ogDesc: string | undefined;
+  let ogImage: string | undefined;
+  let ogUrl: string | undefined;
+  let twitterTitle: string | undefined;
+  let twitterDesc: string | undefined;
+  let twitterImage: string | undefined;
+  let metaDesc: string | undefined;
+  let metaKeywords: string | undefined;
 
-  $('meta').each((_, el) => {
-    const attribs = el.attribs || {};
+  for (const el of $('meta').toArray()) {
+    const attribs = (el as any).attribs || {};
     let prop = '';
     let content = '';
 
     for (const [k, v] of Object.entries(attribs)) {
       const kLower = k.toLowerCase();
       if (kLower === 'property' || kLower === 'name' || kLower === 'http-equiv') {
-        prop = (v || '').toLowerCase();
+        prop = ((v as string) || '').toLowerCase();
       }
       if (kLower === 'content') {
-        content = v || '';
+        content = (v as string) || '';
       }
     }
 
@@ -100,20 +100,20 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
       if (prop === 'description' && !metaDesc) metaDesc = cleanText(content);
       if (prop === 'keywords' && !metaKeywords) metaKeywords = cleanText(content);
     }
-  });
+  }
 
-  let faviconHref: string | undefined = undefined;
-  let appleTouchHref: string | undefined = undefined;
-  let canonicalHref: string | undefined = undefined;
+  let faviconHref: string | undefined;
+  let appleTouchHref: string | undefined;
+  let canonicalHref: string | undefined;
 
-  $('link').each((_, el) => {
-    const attribs = el.attribs || {};
+  for (const el of $('link').toArray()) {
+    const attribs = (el as any).attribs || {};
     let rel = '';
     let href = '';
     for (const [k, v] of Object.entries(attribs)) {
       const kLower = k.toLowerCase();
-      if (kLower === 'rel') rel = (v || '').toLowerCase();
-      if (kLower === 'href') href = v || '';
+      if (kLower === 'rel') rel = ((v as string) || '').toLowerCase();
+      if (kLower === 'href') href = (v as string) || '';
     }
 
     if (rel.includes('shortcut icon') || rel === 'icon') {
@@ -125,9 +125,11 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
     if (rel === 'canonical') {
       if (!canonicalHref) canonicalHref = href;
     }
-  });
+  }
 
-  const canonicalUrl = canonicalHref ? resolveAbsoluteUrl(canonicalHref.trim(), baseUrl) : undefined;
+  const canonicalUrl = canonicalHref && canonicalHref.trim()
+    ? resolveAbsoluteUrl(canonicalHref.trim(), baseUrl)
+    : undefined;
   const resolvedOgUrl = resolveAbsoluteUrl(ogUrl, baseUrl);
   const resolvedOgImage = resolveAbsoluteUrl(ogImage, baseUrl);
   const resolvedTwitterImage = resolveAbsoluteUrl(twitterImage, baseUrl);
@@ -149,9 +151,9 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
   if (resolvedOgImage) screenshotCandidates.push(resolvedOgImage);
   if (resolvedTwitterImage && resolvedTwitterImage !== resolvedOgImage) screenshotCandidates.push(resolvedTwitterImage);
 
-  $('img').each((_, el) => {
+  for (const el of $('img').toArray()) {
     const src = $(el).attr('src') || $(el).attr('data-src');
-    if (!src) return;
+    if (!src) continue;
     const alt = ($(el).attr('alt') || '').toLowerCase();
     const className = ($(el).attr('class') || '').toLowerCase();
     const id = ($(el).attr('id') || '').toLowerCase();
@@ -174,46 +176,50 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
         screenshotCandidates.push(resolved);
       }
     }
-  });
+  }
 
   const heroImageUrl = resolvedOgImage || resolvedTwitterImage || screenshotCandidates[0];
 
   // Keywords
   let keywordsList: string[] | undefined = undefined;
-  if (metaKeywords) {
+  if (metaKeywords && metaKeywords.trim()) {
     keywordsList = metaKeywords
       .split(',')
-      .map((k) => cleanText(k))
-      .filter((k) => k.length > 0);
+      .map((k: string) => cleanText(k))
+      .filter((k: string) => k.length > 0);
   }
 
   // JSON-LD structured data
   let jsonLd: Record<string, any> | undefined = undefined;
-  $('script[type="application/ld+json"]').each((_, el) => {
-    if (jsonLd) return;
+  for (const el of $('script[type="application/ld+json"]').toArray()) {
+    if (jsonLd) break;
     try {
       const rawJson = $(el).html();
-      if (!rawJson) return;
+      if (!rawJson) continue;
       const parsed = JSON.parse(rawJson.trim());
       if (Array.isArray(parsed)) {
         const matching = parsed.find(
           (p) =>
-            p['@type'] === 'SoftwareApplication' ||
-            p['@type'] === 'WebApplication' ||
-            p['@type'] === 'Product' ||
-            p['@type'] === 'Organization'
+            p &&
+            typeof p === 'object' &&
+            (p['@type'] === 'SoftwareApplication' ||
+              p['@type'] === 'WebApplication' ||
+              p['@type'] === 'Product' ||
+              p['@type'] === 'Organization')
         );
-        jsonLd = matching || parsed[0];
+        jsonLd = matching || parsed.find((p) => p && typeof p === 'object') || undefined;
       } else if (parsed && typeof parsed === 'object') {
         if (parsed['@graph'] && Array.isArray(parsed['@graph'])) {
           const matching = parsed['@graph'].find(
             (p: any) =>
-              p['@type'] === 'SoftwareApplication' ||
-              p['@type'] === 'WebApplication' ||
-              p['@type'] === 'Product' ||
-              p['@type'] === 'Organization'
+              p &&
+              typeof p === 'object' &&
+              (p['@type'] === 'SoftwareApplication' ||
+                p['@type'] === 'WebApplication' ||
+                p['@type'] === 'Product' ||
+                p['@type'] === 'Organization')
           );
-          jsonLd = matching || parsed['@graph'][0];
+          jsonLd = matching || parsed['@graph'].find((p: any) => p && typeof p === 'object') || undefined;
         } else {
           jsonLd = parsed;
         }
@@ -221,7 +227,7 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
     } catch {
       // Ignore invalid JSON-LD
     }
-  });
+  }
 
   // Body text summary
   const bodyParagraphs: string[] = [];
