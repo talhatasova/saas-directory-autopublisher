@@ -127,27 +127,20 @@ describe('CHALLENGER-M2: Empirical Verification & Adversarial Stress Test Suite'
       }
     });
 
-    it('EMPIRICAL PROBE: Checks if detailedReview strictly satisfies >= 500 chars on minimal/sparse inputs', () => {
+    it('asserts detailedReview strictly satisfies >= 500 chars on ALL minimal/sparse inputs', () => {
       const results: { name: string; length: number; passed: boolean }[] = [];
       for (const tc of adversarialCopyInputs) {
         const copy = CopyGeneratorEngine.generate(tc.input);
         const passed = copy.detailedReview.length >= 500;
         results.push({ name: tc.name, length: copy.detailedReview.length, passed });
+        assert.ok(
+          passed,
+          `[FAIL] Case "${tc.name}" produced detailedReview of length ${copy.detailedReview.length} (< 500 chars)`
+        );
       }
 
       const failingCases = results.filter((r) => !r.passed);
-      // We document the empirical probe outcome
-      if (failingCases.length > 0) {
-        console.warn(
-          `[CHALLENGER WARNING] Detailed review < 500 chars detected in ${failingCases.length} sparse input cases:`,
-          failingCases
-        );
-      }
-      // Note: This probe records the finding without crashing the test runner prematurely so all tests can run.
-      assert.ok(
-        results.length > 0,
-        'Should execute all probes'
-      );
+      assert.strictEqual(failingCases.length, 0, 'All adversarial input cases must strictly satisfy >= 500 chars');
     });
 
     it('verifies word-boundary truncation logic does not chop words when spaces are present', () => {
@@ -396,11 +389,10 @@ describe('CHALLENGER-M2: Empirical Verification & Adversarial Stress Test Suite'
         <title>Fallback Title</title>
       `;
       const raw = extractHtmlMetadata(weirdJsonLd, 'https://jsonld.test');
-      // Due to unhandled null access, the JSON-LD parser catches a TypeError and discards the valid item
-      console.warn(
-        `[CHALLENGER FINDING] JSON-LD array containing null dropped entire schema -> jsonLd is ${raw.jsonLd}`
-      );
       assert.strictEqual(raw.title, 'Fallback Title');
+      assert.ok(raw.jsonLd !== undefined, 'JSON-LD parser should safely handle null elements without dropping schema');
+      assert.strictEqual(raw.jsonLd?.['@type'], 'SoftwareApplication');
+      assert.strictEqual(raw.jsonLd?.name, 'AppFromJSON');
     });
 
     it('handles nested @graph arrays in JSON-LD', () => {
@@ -419,25 +411,18 @@ describe('CHALLENGER-M2: Empirical Verification & Adversarial Stress Test Suite'
       assert.ok(raw.jsonLd !== undefined);
     });
 
-    it('EMPIRICAL PROBE: Exposes pricing model misclassification for decimal zero string prices like "0.00"', () => {
-      // price '0.00' fails strict equality check o.price === '0' and is misclassified as freemium
+    it('accurately classifies pricing models for decimal zero string prices like "0.00"', () => {
+      // price '0.00' normalized to 'free'
       const decimalZeroModel = CopyGeneratorEngine.classifyPricing('Platform', {
         offers: [{ price: '0.00' }],
       });
-      console.warn(
-        `[CHALLENGER FINDING] Single offer with price "0.00" evaluated to: ${decimalZeroModel} (expected: free)`
-      );
+      assert.strictEqual(decimalZeroModel, 'free', 'Single offer with price "0.00" must be classified as free');
 
-      // multi-tier with '0.00' and '29.00' misclassified as paid instead of freemium
+      // multi-tier with '0.00' and '29.00' correctly classified as freemium
       const multiTierDecimal = CopyGeneratorEngine.classifyPricing('Platform', {
         offers: [{ price: '0.00' }, { price: '29.00' }],
       });
-      console.warn(
-        `[CHALLENGER FINDING] Multi-tier with "0.00" and "29.00" evaluated to: ${multiTierDecimal} (expected: freemium)`
-      );
-
-      assert.strictEqual(decimalZeroModel, 'freemium');
-      assert.strictEqual(multiTierDecimal, 'paid');
+      assert.strictEqual(multiTierDecimal, 'freemium', 'Multi-tier with "0.00" and "29.00" must be classified as freemium');
 
       // Integer prices work as expected
       assert.strictEqual(CopyGeneratorEngine.classifyPricing('Platform', { offers: [{ price: 0 }] }), 'free');
@@ -468,7 +453,7 @@ describe('CHALLENGER-M2: Empirical Verification & Adversarial Stress Test Suite'
       }
     });
 
-    it('EMPIRICAL PROBE: Exposes false-positive AI Tools classification bug due to substring "ai" in common English words', () => {
+    it('accurately classifies common English vocabulary without false-positive AI substring collisions', () => {
       const falsePositiveWords = [
         { phrase: 'email newsletter marketing system', intended: 'Marketing' },
         { phrase: 'domain name search and dns records', intended: 'Developer Tools' },
@@ -487,13 +472,11 @@ describe('CHALLENGER-M2: Empirical Verification & Adversarial Stress Test Suite'
         }
       }
 
-      console.warn(
-        `[CHALLENGER FINDING] Substring taxonomy collision misclassifications (${misclassifications.length}/${falsePositiveWords.length}):`,
-        misclassifications
+      assert.strictEqual(
+        misclassifications.length,
+        0,
+        `All domain phrases must be classified correctly without false-positive AI collisions: ${JSON.stringify(misclassifications)}`
       );
-
-      // Verify that all 7 contain substring "ai" and are misclassified as "AI Tools"
-      assert.ok(misclassifications.length >= 5, 'Should empirically confirm the false-positive substring collision bug');
     });
 
     it('extracts normalized tags without punctuation and filters invalid length tokens', () => {
