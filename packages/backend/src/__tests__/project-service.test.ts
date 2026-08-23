@@ -54,6 +54,10 @@ describe('Project Service Suite', () => {
     assert.strictEqual(userAProjects.length, 1);
     assert.strictEqual(userAProjects[0]?.id, p1.id);
 
+    const userBProjects = await projectService.getProjects('user-B');
+    assert.strictEqual(userBProjects.length, 1);
+    assert.strictEqual(userBProjects[0]?.id, p2.id);
+
     const allProjects = await projectService.getProjects();
     assert.strictEqual(allProjects.length, 2);
   });

@@ -32,12 +32,7 @@ export function normalizeUrl(rawUrl: string): string {
 
   // Prepend https:// if protocol is missing
   if (!/^https?:\/\//i.test(trimmed)) {
-    // Check if it looks like a valid domain or ip
-    if (/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(:\d+)?(\/.*)?$/i.test(trimmed) || /^127\.0\.0\.1(:\d+)?(\/.*)?$/.test(trimmed) || /^localhost(:\d+)?(\/.*)?$/i.test(trimmed)) {
-      trimmed = `https://${trimmed}`;
-    } else {
-      throw new Error(`Invalid URL format: "${rawUrl}"`);
-    }
+    trimmed = `https://${trimmed}`;
   }
 
   let parsed: URL;
