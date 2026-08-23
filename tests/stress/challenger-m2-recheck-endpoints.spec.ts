@@ -856,7 +856,7 @@ describe('CHALLENGER-M2-RECHECK: Fastify Endpoints, Batch Launch, SSE & WebSocke
   describe('5. Full End-to-End Reactive Lifecycle Concurrency Integration', () => {
     it('executes full reactive lifecycle: concurrent project creation, batch launch, real-time SSE + WS streaming, and intervention resolution', async () => {
       const projectCount = 5;
-      const dirsPerProject = ['uneed', 'saashub', 'toolify', 'alternativeto', 'theresanaiforthat', 'betalist', 'producthunt'];
+      const dirsPerProject = ['uneed', 'saashub', 'toolify', 'alternativeto', 'theresanaiforthat', 'indiehackers', 'producthunt'];
       const sseClients: http.ClientRequest[] = [];
       const wsClients: WebSocket[] = [];
 
