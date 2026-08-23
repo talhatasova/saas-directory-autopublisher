@@ -238,7 +238,7 @@ export class CopyGeneratorEngine {
 
     const lower = description.toLowerCase();
     if (lower.includes('open source') || lower.includes('open-source') || lower.includes('github.com')) {
-      return 'open_source';
+      return 'free';
     }
     if (lower.includes('freemium') || (lower.includes('free plan') && lower.includes('pro')) || (lower.includes('free tier') && lower.includes('paid'))) {
       return 'freemium';

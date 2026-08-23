@@ -1,7 +1,12 @@
 import { EventEmitter } from 'node:events';
 import { FastifyReply } from 'fastify';
 import type { WebSocket } from 'ws';
-import { RealtimeEventPayload, SubmissionStatus } from '@saas-autopublisher/shared';
+import { JobStreamEvent, SubmissionStatus } from '@saas-autopublisher/shared';
+
+export type RealtimeBroadcastEvent = JobStreamEvent | {
+  type: string;
+  payload: Record<string, unknown>;
+};
 
 export interface SseClient {
   id: string;

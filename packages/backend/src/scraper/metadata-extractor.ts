@@ -214,7 +214,7 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
     ogTitle ||
     twitterTitle ||
     rawTitle ||
-    jsonLd?.name ||
+    ((jsonLd as any)?.name as string | undefined) ||
     h1 ||
     'Untitled Product';
 
@@ -231,7 +231,7 @@ export function extractHtmlMetadata(html: string, baseUrl: string): RawExtracted
     ogDesc ||
     metaDesc ||
     twitterDesc ||
-    jsonLd?.description ||
+    ((jsonLd as any)?.description as string | undefined) ||
     bodyParagraphs.slice(0, 2).join(' ') ||
     '';
 
