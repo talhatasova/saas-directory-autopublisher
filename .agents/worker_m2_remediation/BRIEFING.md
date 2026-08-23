@@ -1,4 +1,4 @@
-# BRIEFING — 2026-08-23T18:24:34Z
+# BRIEFING — 2026-08-23T18:30:00Z
 
 ## Mission
 Fix TypeScript compilation errors, copy generator narrative character threshold, taxonomy regex boundaries, and pricing detection null-safety in M2.
@@ -23,26 +23,36 @@ Fix TypeScript compilation errors, copy generator narrative character threshold,
 - Updated: 2026-08-23T18:24:34Z
 
 ## Task Summary
-- **What to build**: Fix metadata extraction and copy generation bugs, fix type errors, satisfy review criteria and tests.
-- **Success criteria**: TypeScript build passes cleanly, backend tests pass, full test suite passes.
+- **What to build**: Fixed metadata extraction and copy generation bugs, fixed type errors, satisfied review and challenger criteria.
+- **Success criteria**: TypeScript build passes cleanly with exit code 0, backend tests pass (49/49), monorepo test suite passes (123 root + 65 package tests + 50 benchmark jobs).
 - **Interface contracts**: packages/backend/src/scraper/
 - **Code layout**: packages/backend/
 
 ## Change Tracker
-- **Files modified**: none yet
-- **Build status**: pending
-- **Pending issues**: none
+- **Files modified**:
+  - `packages/backend/src/scraper/metadata-extractor.ts`: Fixed TS compilation closure narrowing using `for..of` loops, added JSON-LD null guards.
+  - `packages/backend/src/scraper/copy-generator.ts`: Guaranteed >= 500 chars in `synthesizeDetailedReview`, implemented word boundary regex `/\b...\b/` in `classifyCategory` and `extractNormalizedTags`, fixed decimal string pricing `'0.00'`.
+  - `tests/unit/copy-generator.spec.ts`: Aligned test engine with word boundaries, decimal pricing, and added minimal input >= 500 chars tests.
+  - `tests/stress/challenger-m2.spec.ts`: Updated test assertions to verify remediated behaviors.
+- **Build status**: PASS (`npm run build` exited with code 0)
+- **Pending issues**: None
 
 ## Quality Status
-- **Build/test result**: pending
-- **Lint status**: pending
-- **Tests added/modified**: pending
+- **Build/test result**: PASS across all suites:
+  - `npm run build` (code 0)
+  - `npm run test:backend` (49/49 tests pass)
+  - `npm run test:all` (123 root unit/stress/sandbox + 65 shared/backend + 50 load runner jobs pass)
+- **Lint status**: Zero compiler or runtime type errors.
+- **Tests added/modified**: Edge case verification for minimal inputs (single character/empty titles), decimal zero string pricing (`'0.00'`), and non-AI vocabulary word boundary classification.
 
 ## Loaded Skills
 - None
 
 ## Key Decisions Made
-- Starting investigation of reports, metadata-extractor.ts, copy-generator.ts, and test suite.
+- Replaced Cheerio `.each()` callbacks with synchronous `for..of` array iterations on `$('...').toArray()` to eliminate TypeScript strict CFA narrowing to `never`.
+- Structured `synthesizeDetailedReview` into four narrative sections with an extra deterministic safety guard to ensure $\ge 500$ chars invariant under any input.
+- Used `\b` regex boundaries across both `classifyCategory` and `extractNormalizedTags` to avoid tag/category poisoning from words like "email", "container", "quick", and "domain".
+- Normalized decimal string prices (`'0.00'`) via `parseFloat` in `classifyPricing`.
 
 ## Artifact Index
 - DISPATCH.md — Assignment
