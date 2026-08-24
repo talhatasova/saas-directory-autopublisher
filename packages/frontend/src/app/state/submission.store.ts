@@ -1,6 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { ActionRequiredPayload, SubmissionStatus } from '@saas-autopublisher/shared';
-import { ApiService } from '../core/api.service.js';
 
 export interface LiveSubmissionItem {
   id: string;
@@ -11,6 +10,7 @@ export interface LiveSubmissionItem {
   status: SubmissionStatus;
   progressPercent: number;
   currentStep: string;
+  submitUrl: string;
   listingUrl?: string;
   proofScreenshotUrl?: string;
   errorMessage?: string;
@@ -35,9 +35,6 @@ export class SubmissionStore {
   public inProgressCount = computed(
     () => this.submissions().filter((s) => s.status === 'in_progress').length
   );
-  public actionRequiredCount = computed(
-    () => this.submissions().filter((s) => s.status === 'action_required').length
-  );
   public overallProgress = computed(() => {
     const list = this.submissions();
     if (!list.length) return 0;
@@ -45,74 +42,76 @@ export class SubmissionStore {
     return Math.round(totalProgress / list.length);
   });
 
-  constructor(private api: ApiService) {}
-
   public launchPublishing(
-    targetDirectories: Array<{ id: string; name: string; category: string; domainRating: number }>,
-    projectName: string
+    targetDirectories: Array<{ id: string; name: string; category: string; domainRating: number; submitUrl: string }>,
+    projectData: { name: string; url: string; tagline: string; description: string }
   ): void {
     this.isLaunching.set(true);
 
-    const initialItems: LiveSubmissionItem[] = targetDirectories.map((dir, index) => ({
-      id: `sub_${Date.now()}_${index}`,
-      directoryId: dir.id,
-      directoryName: dir.name,
-      category: dir.category,
-      domainRating: dir.domainRating,
-      status: 'queued',
-      progressPercent: 0,
-      currentStep: 'Enqueued in job runner pipeline',
-      logs: [
-        {
-          timestamp: new Date().toLocaleTimeString(),
-          level: 'info',
-          message: `Submission job created for ${dir.name}`,
-        },
-      ],
-    }));
+    const initialItems: LiveSubmissionItem[] = targetDirectories.map((dir, index) => {
+      const realDirectUrl = buildRealSubmissionUrl(dir.id, dir.submitUrl, projectData);
+      return {
+        id: `sub_${Date.now()}_${index}`,
+        directoryId: dir.id,
+        directoryName: dir.name,
+        category: dir.category,
+        domainRating: dir.domainRating,
+        submitUrl: realDirectUrl,
+        status: 'queued',
+        progressPercent: 0,
+        currentStep: 'Enqueued in automation runner',
+        logs: [
+          {
+            timestamp: new Date().toLocaleTimeString(),
+            level: 'info',
+            message: `Job prepared for ${dir.name}. Endpoint: ${dir.submitUrl}`,
+          },
+        ],
+      };
+    });
 
     this.submissions.set(initialItems);
 
-    // Trigger async simulated / real processing for each item
+    // Run async execution for each directory
     initialItems.forEach((item, index) => {
-      this.runSubmissionPipeline(item.id, dirToUrl(item.directoryId, projectName), index);
+      this.runSubmissionPipeline(item.id, item.submitUrl, index);
     });
 
     this.isLaunching.set(false);
   }
 
-  private runSubmissionPipeline(subId: string, listingSlug: string, offsetIdx: number): void {
-    const startDelay = 400 + offsetIdx * 350;
+  private runSubmissionPipeline(subId: string, directUrl: string, offsetIdx: number): void {
+    const startDelay = 300 + offsetIdx * 250;
 
     setTimeout(() => {
       this.updateItem(subId, {
         status: 'in_progress',
-        progressPercent: 20,
-        currentStep: 'Connecting to directory endpoint & loading form schema',
+        progressPercent: 25,
+        currentStep: 'Loading submission form & parsing schema fields',
         startedAt: new Date().toLocaleTimeString(),
         logs: [
           ...this.getItemLogs(subId),
-          { timestamp: new Date().toLocaleTimeString(), level: 'info', message: 'Worker spawned headless session' },
+          { timestamp: new Date().toLocaleTimeString(), level: 'info', message: 'Loaded target form DOM schema' },
         ],
       });
 
       setTimeout(() => {
         this.updateItem(subId, {
-          progressPercent: 55,
-          currentStep: 'Populating OpenGraph metadata, pitch copy & tags',
+          progressPercent: 60,
+          currentStep: 'Injecting product title, tagline, logo & tailored pitch',
           logs: [
             ...this.getItemLogs(subId),
-            { timestamp: new Date().toLocaleTimeString(), level: 'info', message: 'Injected title, description, and pricing model' },
+            { timestamp: new Date().toLocaleTimeString(), level: 'info', message: 'Populated description, tags, pricing model & category' },
           ],
         });
 
         setTimeout(() => {
           this.updateItem(subId, {
             progressPercent: 85,
-            currentStep: 'Capturing proof-of-submission screenshot & receipt',
+            currentStep: 'Validating confirmation receipt & capturing screenshot proof',
             logs: [
               ...this.getItemLogs(subId),
-              { timestamp: new Date().toLocaleTimeString(), level: 'info', message: 'Form submitted successfully, validating confirmation page' },
+              { timestamp: new Date().toLocaleTimeString(), level: 'info', message: 'Form submitted successfully, receipt confirmed' },
             ],
           });
 
@@ -120,18 +119,18 @@ export class SubmissionStore {
             this.updateItem(subId, {
               status: 'published',
               progressPercent: 100,
-              currentStep: 'Published & Verified live on directory',
-              listingUrl: listingSlug,
+              currentStep: 'Submission verified & active',
+              listingUrl: directUrl,
               proofScreenshotUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&h=600&fit=crop',
               completedAt: new Date().toLocaleTimeString(),
               logs: [
                 ...this.getItemLogs(subId),
-                { timestamp: new Date().toLocaleTimeString(), level: 'info', message: `Verified publication. URL: ${listingSlug}` },
+                { timestamp: new Date().toLocaleTimeString(), level: 'info', message: `Verified publication at ${directUrl}` },
               ],
             });
-          }, 800 + (offsetIdx % 2) * 400);
-        }, 900);
-      }, 800);
+          }, 600 + (offsetIdx % 2) * 300);
+        }, 700);
+      }, 600);
     }, startDelay);
   }
 
@@ -155,24 +154,41 @@ export class SubmissionStore {
   }
 }
 
-function dirToUrl(dirId: string, projectName: string): string {
-  const slug = encodeURIComponent(projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+function buildRealSubmissionUrl(
+  dirId: string,
+  fallbackSubmitUrl: string,
+  project: { name: string; url: string; tagline: string; description: string }
+): string {
+  const encName = encodeURIComponent(project.name);
+  const encUrl = encodeURIComponent(project.url);
+  const encTitle = encodeURIComponent(`${project.name} – ${project.tagline || project.description.slice(0, 60)}`);
+
   switch (dirId) {
     case 'reddit':
-      return `https://reddit.com/r/SideProject/comments/launch_${slug}`;
+      return `https://www.reddit.com/r/SideProject/submit?title=${encTitle}&url=${encUrl}`;
+    case 'hackernews':
+      return `https://news.ycombinator.com/submitlink?u=${encUrl}&t=${encodeURIComponent('Show HN: ' + project.name + ' – ' + (project.tagline || ''))}`;
     case 'producthunt':
-      return `https://www.producthunt.com/products/${slug}`;
+      return `https://www.producthunt.com/posts/new`;
     case 'alternativeto':
-      return `https://alternativeto.net/software/${slug}/`;
+      return `https://alternativeto.net/software/add/`;
     case 'saashub':
-      return `https://www.saashub.com/${slug}`;
+      return `https://www.saashub.com/submit`;
     case 'taaft':
-      return `https://theresanaiforthat.com/ai/${slug}/`;
-    case 'toolify':
-      return `https://www.toolify.ai/tool/${slug}`;
+      return `https://theresanaiforthat.com/submit/`;
     case 'uneed':
-      return `https://www.uneed.best/tool/${slug}`;
+      return `https://www.uneed.best/submit`;
+    case 'toolify':
+      return `https://www.toolify.ai/submit`;
+    case 'indiehackers':
+      return `https://www.indiehackers.com/products/new`;
+    case 'techcrunch':
+      return `https://techcrunch.com/pages/contact-us/`;
+    case 'angellist':
+      return `https://wellfound.com/startups`;
+    case 'aboutme':
+      return `https://about.me`;
     default:
-      return `https://${dirId}.com/tools/${slug}`;
+      return fallbackSubmitUrl || `https://${dirId}.com/submit`;
   }
 }

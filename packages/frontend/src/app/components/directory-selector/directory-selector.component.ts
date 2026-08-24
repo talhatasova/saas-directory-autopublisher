@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DirectoryStore } from '../../state/directory.store.js';
+import { DirectoryStore, DisplayDirectory } from '../../state/directory.store.js';
 import { SubmissionStore } from '../../state/submission.store.js';
 import { ProjectStore } from '../../state/project.store.js';
 
@@ -10,146 +10,191 @@ import { ProjectStore } from '../../state/project.store.js';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <section id="directory-selector-section" class="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="directory-selector-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
-      <!-- Top Action Bar -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 class="text-xl sm:text-2xl font-bold text-white font-display flex items-center gap-3">
-            <span>Free Launch Directories</span>
-            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-sans font-semibold">
-              {{ directoryStore.selectedCount() }} Selected
-            </span>
-          </h2>
-          <p class="text-xs text-slate-400 mt-1">Average Domain Rating: <strong class="text-brand-400">DR {{ directoryStore.avgDomainRating() }}</strong> · Estimated Monthly Exposure: <strong class="text-slate-200">65M+</strong></p>
+      <!-- Top Filters & Search Toolbar (Matching user photo layout) -->
+      <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-6">
+        
+        <!-- Left: Search Box -->
+        <div class="relative flex-1 max-w-md">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+          <input 
+            type="text" 
+            [ngModel]="directoryStore.searchQuery()"
+            (ngModelChange)="directoryStore.searchQuery.set($event)"
+            placeholder="Search 61+ directories..." 
+            class="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-sm" />
         </div>
 
-        <!-- Filter & Actions -->
-        <div class="flex flex-wrap items-center gap-3">
-          <!-- Category Chips -->
-          <div class="flex items-center gap-1.5 p-1 rounded-xl bg-dark-800/80 border border-white/5 text-xs">
-            @for (cat of categories; track cat) {
-              <button 
-                (click)="directoryStore.selectedCategory.set(cat)"
-                [class.bg-brand-600]="directoryStore.selectedCategory() === cat"
-                [class.text-white]="directoryStore.selectedCategory() === cat"
-                [class.text-slate-400]="directoryStore.selectedCategory() !== cat"
-                class="px-2.5 py-1 rounded-lg font-medium transition-all">
-                {{ cat }}
-              </button>
-            }
-          </div>
+        <!-- Right: Category & Link Type Dropdowns + Submit Action Button -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          
+          <!-- Category Filter -->
+          <select 
+            [ngModel]="directoryStore.selectedCategory()"
+            (ngModelChange)="directoryStore.selectedCategory.set($event)"
+            class="bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-sm font-medium">
+            <option value="All">All Categories</option>
+            <option value="Free">Free</option>
+            <option value="Paid">Paid</option>
+            <option value="Free + Paid">Free + Paid</option>
+            <option value="Community">Community</option>
+            <option value="Launch Platform">Launch Platform</option>
+            <option value="AI Tools">AI Tools</option>
+          </select>
 
-          <!-- Select All Toggle -->
+          <!-- Link Type Filter -->
+          <select 
+            [ngModel]="directoryStore.selectedLinkType()"
+            (ngModelChange)="directoryStore.selectedLinkType.set($event)"
+            class="bg-white border border-slate-300 text-slate-700 text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-sm font-medium">
+            <option value="All">All Link Types</option>
+            <option value="Dofollow">Dofollow</option>
+            <option value="Nofollow">Nofollow</option>
+          </select>
+
+          <!-- Select All / Deselect All Toggle -->
           <button 
             (click)="toggleSelectAll()"
-            class="px-3 py-1.5 rounded-xl bg-dark-800 border border-white/10 text-xs text-slate-300 hover:text-white transition-colors">
+            class="px-3 py-2 bg-white border border-slate-300 text-slate-700 text-xs rounded-lg hover:bg-slate-50 font-medium shadow-sm transition-colors">
             {{ allSelected ? 'Deselect All' : 'Select All' }}
           </button>
 
-          <!-- Launch Automation Button -->
-          <button
+          <!-- Primary Launch Button -->
+          <button 
             (click)="handleLaunch()"
             [disabled]="directoryStore.selectedCount() === 0 || submissionStore.isLaunching()"
-            class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold text-xs shadow-glow transition-all disabled:opacity-50 disabled:pointer-events-none">
-            <span>⚡ Launch All ({{ directoryStore.selectedCount() }})</span>
+            class="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-all disabled:opacity-50">
+            <span>⚡ Launch Selected ({{ directoryStore.selectedCount() }})</span>
           </button>
+
         </div>
+
       </div>
 
-      <!-- Directories Table Card (Style matching user screenshot) -->
-      <div class="rounded-2xl glass-card overflow-hidden border border-white/10 shadow-2xl">
+      <!-- Main Directory Table (Pixel-accurate match to screenshot) -->
+      <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs text-slate-300">
-            <thead class="bg-dark-800/80 border-b border-white/5 text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+          <table class="w-full text-left border-collapse text-xs">
+            
+            <!-- Table Header -->
+            <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-[11px] uppercase tracking-wider">
               <tr>
-                <th class="p-4 w-12 text-center">
+                <th class="p-3.5 w-10 text-center">
                   <input 
                     type="checkbox" 
                     [checked]="allSelected" 
                     (change)="toggleSelectAll()"
-                    class="rounded border-white/20 bg-dark-800 text-brand-500 focus:ring-brand-500" />
+                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
                 </th>
-                <th class="py-4 px-3">Directory</th>
-                <th class="py-4 px-3">Category</th>
-                <th class="py-4 px-3 text-center">DR</th>
-                <th class="py-4 px-3">Link Type</th>
-                <th class="py-4 px-3">Est. Traffic</th>
-                <th class="py-4 px-3">Submission Flow</th>
-                <th class="py-4 px-4 text-right">Actions</th>
+                <th class="py-3.5 px-3">Name</th>
+                <th class="py-3.5 px-3">Category</th>
+                <th class="py-3.5 px-3 font-bold text-center">DR</th>
+                <th class="py-3.5 px-3">Link Type</th>
+                <th class="py-3.5 px-3 font-bold">Traffic</th>
+                <th class="py-3.5 px-3 w-2/5">Description</th>
+                <th class="py-3.5 px-3 text-slate-400">DR Updated</th>
+                <th class="py-3.5 px-2 text-center">Bookmark</th>
+                <th class="py-3.5 px-3 text-right">Visit</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-white/5">
+
+            <!-- Table Body -->
+            <tbody class="divide-y divide-slate-100 text-slate-700">
               @for (dir of directoryStore.filteredDirectories(); track dir.id) {
-                <tr class="hover:bg-white/[0.02] transition-colors group">
+                <tr class="table-row-hover">
                   
                   <!-- Checkbox -->
-                  <td class="p-4 text-center">
+                  <td class="p-3.5 text-center">
                     <input 
                       type="checkbox" 
                       [checked]="dir.selected" 
                       (change)="directoryStore.toggleSelection(dir.id)"
-                      class="rounded border-white/20 bg-dark-800 text-brand-500 focus:ring-brand-500" />
+                      class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
                   </td>
 
-                  <!-- Name & Icon -->
-                  <td class="py-4 px-3 font-semibold text-white">
-                    <div class="flex items-center gap-3">
-                      <div class="w-8 h-8 rounded-lg bg-dark-800 border border-white/10 flex items-center justify-center text-sm font-bold text-brand-400 group-hover:border-brand-500/40 transition-colors">
-                        {{ dir.name.charAt(0) }}
+                  <!-- Name with Brand Icon -->
+                  <td class="py-3.5 px-3 font-semibold text-slate-900 whitespace-nowrap">
+                    <div class="flex items-center gap-2.5">
+                      <div 
+                        class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shadow-xs"
+                        [style.background-color]="dir.brandColor">
+                        {{ dir.iconText }}
                       </div>
-                      <div>
-                        <div class="text-slate-100 font-bold text-xs sm:text-sm">{{ dir.name }}</div>
-                        <div class="text-[10px] text-slate-500 font-mono">{{ dir.url.replace('https://', '') }}</div>
-                      </div>
+                      <span class="font-bold text-slate-900">{{ dir.name }}</span>
                     </div>
                   </td>
 
-                  <!-- Category Pill -->
-                  <td class="py-4 px-3">
-                    <span class="inline-block px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-300 border border-brand-500/20 text-[11px] font-medium">
-                      {{ dir.category }}
+                  <!-- Category Badge -->
+                  <td class="py-3.5 px-3 whitespace-nowrap">
+                    <span 
+                      class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+                      [ngClass]="{
+                        'badge-free': dir.pricingType === 'Free',
+                        'badge-paid': dir.pricingType === 'Paid',
+                        'badge-freepaid': dir.pricingType === 'Free + Paid'
+                      }">
+                      {{ dir.pricingType }}
                     </span>
                   </td>
 
-                  <!-- Domain Rating Badge -->
-                  <td class="py-4 px-3 text-center">
-                    <span class="inline-flex items-center justify-center font-bold text-xs"
-                      [class.text-emerald-400]="dir.domainRating >= 80"
-                      [class.text-cyan-400]="dir.domainRating >= 70 && dir.domainRating < 80"
-                      [class.text-amber-400]="dir.domainRating < 70">
+                  <!-- Domain Rating (DR in bold green) -->
+                  <td class="py-3.5 px-3 text-center whitespace-nowrap">
+                    <span class="font-bold text-emerald-600 text-xs sm:text-sm">
                       {{ dir.domainRating }}
                     </span>
                   </td>
 
-                  <!-- Link Type -->
-                  <td class="py-4 px-3">
-                    <span class="text-[11px] px-2 py-0.5 rounded bg-dark-800 border border-white/5"
-                      [class.text-emerald-300]="dir.linkType === 'Dofollow'"
-                      [class.text-slate-400]="dir.linkType !== 'Dofollow'">
-                      {{ dir.linkType || 'Dofollow' }}
+                  <!-- Link Type Badge -->
+                  <td class="py-3.5 px-3 whitespace-nowrap">
+                    <span 
+                      class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium"
+                      [ngClass]="{
+                        'badge-dofollow': dir.linkType === 'Dofollow',
+                        'badge-nofollow': dir.linkType === 'Nofollow'
+                      }">
+                      {{ dir.linkType }}
                     </span>
                   </td>
 
-                  <!-- Est. Traffic -->
-                  <td class="py-4 px-3 font-mono font-medium text-slate-300">
-                    {{ dir.trafficEst || '500K' }}
+                  <!-- Traffic -->
+                  <td class="py-3.5 px-3 font-semibold text-slate-900 whitespace-nowrap">
+                    {{ dir.traffic }}
                   </td>
 
-                  <!-- Submission Mode -->
-                  <td class="py-4 px-3">
-                    <div class="flex items-center gap-1.5 text-[11px]">
-                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                      <span class="text-slate-300">Playwright Autonomous</span>
-                    </div>
+                  <!-- Description -->
+                  <td class="py-3.5 px-3 text-slate-600 leading-relaxed line-clamp-2 sm:line-clamp-none">
+                    {{ dir.description }}
                   </td>
 
-                  <!-- Visit Action Link -->
-                  <td class="py-4 px-4 text-right">
+                  <!-- DR Updated -->
+                  <td class="py-3.5 px-3 text-slate-400 whitespace-nowrap text-[11px]">
+                    {{ dir.drUpdated }}
+                  </td>
+
+                  <!-- Bookmark Button -->
+                  <td class="py-3.5 px-2 text-center">
+                    <button 
+                      (click)="directoryStore.toggleBookmark(dir.id)"
+                      class="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-amber-500 transition-colors"
+                      [class.text-amber-500]="dir.isBookmarked">
+                      <svg class="w-4 h-4" [attr.fill]="dir.isBookmarked ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                      </svg>
+                    </button>
+                  </td>
+
+                  <!-- Visit / Direct Submit Link (Real, Live Non-404 URL) -->
+                  <td class="py-3.5 px-3 text-right whitespace-nowrap">
                     <a 
-                      [href]="dir.url" 
+                      [href]="dir.submitUrl" 
                       target="_blank" 
-                      class="inline-flex items-center gap-1 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-dark-800 transition-colors">
+                      title="Open Live Submission Page"
+                      class="inline-flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                       </svg>
@@ -157,8 +202,15 @@ import { ProjectStore } from '../../state/project.store.js';
                   </td>
 
                 </tr>
+              } @empty {
+                <tr>
+                  <td colspan="10" class="py-12 text-center text-slate-400">
+                    No directories match your filters.
+                  </td>
+                </tr>
               }
             </tbody>
+
           </table>
         </div>
       </div>
@@ -170,8 +222,6 @@ export class DirectorySelectorComponent {
   public directoryStore = inject(DirectoryStore);
   public submissionStore = inject(SubmissionStore);
   public projectStore = inject(ProjectStore);
-
-  public categories = ['All', 'AI Directory', 'Software Catalog', 'Launch Platform', 'Community'];
 
   public get allSelected(): boolean {
     const list = this.directoryStore.filteredDirectories();
@@ -186,16 +236,22 @@ export class DirectorySelectorComponent {
   public handleLaunch(): void {
     const selected = this.directoryStore.directories().filter((d) => d.selected);
     const meta = this.projectStore.extractedMetadata();
-    const projectName = meta?.name || 'My SaaS Platform';
+    
+    const projectData = {
+      name: meta?.name || 'My SaaS Platform',
+      url: meta?.url || 'https://yourapp.com',
+      tagline: meta?.tagline || 'Autonomous AI automation tool',
+      description: meta?.description || 'All-in-one software platform.',
+    };
 
-    this.submissionStore.launchPublishing(selected, projectName);
+    this.submissionStore.launchPublishing(selected, projectData);
 
-    // Scroll down to live matrix
+    // Scroll down smoothly to live status matrix
     setTimeout(() => {
       const el = document.getElementById('submission-matrix-section');
       if (el) {
         el.scrollIntoView({ behavior: 'smooth' });
       }
-    }, 200);
+    }, 150);
   }
 }

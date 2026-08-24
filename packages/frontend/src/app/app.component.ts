@@ -22,32 +22,35 @@ import { ProofModalComponent } from './components/proof-modal/proof-modal.compon
     ProofModalComponent,
   ],
   template: `
-    <div class="min-h-screen flex flex-col justify-between">
+    <div class="min-h-screen flex flex-col justify-between bg-[#f8fafc]">
       
-      <!-- Top Navigation -->
+      <!-- Navbar -->
       <app-navbar></app-navbar>
 
-      <!-- Main Application Experience -->
-      <main class="flex-1 pb-16">
+      <!-- Main Container -->
+      <main class="flex-1">
         <app-hero-url-bar></app-hero-url-bar>
         <app-stats-banner></app-stats-banner>
         <app-directory-selector></app-directory-selector>
         <app-submission-matrix></app-submission-matrix>
       </main>
 
-      <!-- Dialogs & Lightbox Modals -->
+      <!-- Dialogs -->
       <app-metadata-modal></app-metadata-modal>
       <app-proof-modal></app-proof-modal>
 
       <!-- Footer -->
-      <footer class="border-t border-white/5 bg-dark-950 py-8 text-center text-xs text-slate-500">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer class="border-t border-slate-200 bg-white py-8 text-xs text-slate-500 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div class="flex items-center gap-2">
-            <span class="font-bold text-slate-300">LaunchAuto</span>
-            <span>· Built with Angular 19, Supabase & Playwright</span>
+            <span class="font-bold text-slate-800">LaunchDirectories</span>
+            <span>· Automated SaaS Submission Platform</span>
           </div>
-          <div class="flex items-center gap-4 text-slate-400">
-            <span class="text-emerald-400 font-mono">● System Online</span>
+          <div class="flex items-center gap-4 text-slate-500">
+            <span class="text-emerald-600 font-semibold flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              All 61+ Directories Live
+            </span>
             <span>API: Port 3001</span>
             <span>Frontend: Port 4200</span>
           </div>
