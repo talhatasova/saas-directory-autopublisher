@@ -1,0 +1,27 @@
+{
+  "name": "@saas-autopublisher/worker",
+  "version": "1.0.0",
+  "description": "Asynchronous submission queue pipeline and pluggable Playwright/HTTP directory adapters",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "clean": "node -e \"const fs=require('fs'); if(fs.existsSync('dist')) fs.rmSync('dist', {recursive:true,force:true});\"",
+    "start": "node dist/worker.js",
+    "dev": "node --watch dist/worker.js",
+    "test": "node --test \"dist/__tests__/**/*.test.js\""
+  },
+  "dependencies": {
+    "@saas-autopublisher/shared": "*",
+    "@supabase/supabase-js": "^2.49.1",
+    "dotenv": "^16.4.7",
+    "playwright": "^1.50.0",
+    "playwright-core": "^1.50.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "typescript": "^5.7.3"
+  }
+}
